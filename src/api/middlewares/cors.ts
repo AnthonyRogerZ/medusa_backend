@@ -1,5 +1,4 @@
-import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { MedusaNextFunction } from "@medusajs/framework/types"
+import { MedusaRequest, MedusaResponse, MedusaNextFunction } from "@medusajs/framework/http"
 
 export default function corsMiddleware() {
   return (req: MedusaRequest, res: MedusaResponse, next: MedusaNextFunction) => {
