@@ -10,15 +10,15 @@ export const POST = async (req: Request & { scope: any }, res: Response) => {
     
     const remoteQuery = req.scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY)
     
-    // Get cart with payment collection
+    // Get cart
     const carts = await remoteQuery({
       entryPoint: "cart",
-      fields: ["id", "payment_collection.*"],
+      fields: ["id", "total", "currency_code", "region_id"],
       filters: { id }
     })
 
     const cart = carts?.[0]
-    console.log("Found cart:", cart ? "yes" : "no", cart?.payment_collection ? "with payment collection" : "without payment collection")
+    console.log("Found cart:", cart ? "yes" : "no")
 
     if (!cart) {
       return res.status(404).json({
@@ -27,45 +27,44 @@ export const POST = async (req: Request & { scope: any }, res: Response) => {
       })
     }
 
-    // Get or create payment collection for the cart
-    let paymentCollection = cart.payment_collection
-    
+    // Check if payment collection exists for this cart
+    const paymentCollections = await remoteQuery({
+      entryPoint: "payment_collection",
+      fields: ["id", "amount", "currency_code", "payment_sessions.*"],
+      filters: { cart_id: id }
+    })
+
+    let paymentCollection = paymentCollections?.[0]
+    console.log("Found payment collection:", paymentCollection ? "yes" : "no")
+
     if (!paymentCollection) {
-      console.log("Cart has no payment collection, creating one...")
+      console.log("Creating payment collection for cart...")
       
-      // Get cart total and currency
-      const cartTotal = cart.total || 0
-      const cartCurrency = cart.currency_code || "usd"
-      
+      // Use the payment module service to create payment collection
       const paymentModuleService = req.scope.resolve(Modules.PAYMENT)
-      console.log("Payment module service resolved:", !!paymentModuleService)
       
-      // Create payment collection for the cart
-      paymentCollection = await paymentModuleService.createPaymentCollections({
+      paymentCollection = await paymentModuleService.createPaymentCollections([{
         cart_id: cart.id,
-        amount: cartTotal,
-        currency_code: cartCurrency,
+        amount: cart.total || 0,
+        currency_code: cart.currency_code || "usd",
         region_id: cart.region_id
-      })
+      }])
       
+      paymentCollection = paymentCollection[0]
       console.log("Created payment collection:", paymentCollection.id)
     }
 
     // Create payment session for the payment collection
     const paymentModuleService = req.scope.resolve(Modules.PAYMENT)
-    console.log("Payment module service resolved:", !!paymentModuleService)
-    
-    const paymentSessionData = {
-      provider_id,
-      currency_code: paymentCollection.currency_code,
-      amount: paymentCollection.amount,
-      data
-    }
-    console.log("Creating payment session with data:", paymentSessionData)
     
     const paymentSession = await paymentModuleService.createPaymentSession(
       paymentCollection.id,
-      paymentSessionData
+      {
+        provider_id,
+        currency_code: paymentCollection.currency_code,
+        amount: paymentCollection.amount,
+        data
+      }
     )
 
     console.log("Payment session created:", !!paymentSession)
