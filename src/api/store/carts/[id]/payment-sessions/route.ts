@@ -41,7 +41,7 @@ export const POST = async (req: Request & { scope: any }, res: Response) => {
       console.log("Payment module service resolved:", !!paymentModuleService)
       
       // Create payment collection for the cart
-      paymentCollection = await paymentModuleService.createPaymentCollection({
+      paymentCollection = await paymentModuleService.createPaymentCollections({
         cart_id: cart.id,
         amount: cartTotal,
         currency_code: cartCurrency,
