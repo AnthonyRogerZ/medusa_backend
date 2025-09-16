@@ -12,10 +12,9 @@ export const POST = async (req: Request & { scope: any }, res: Response) => {
     
     // Get cart with payment collection
     const carts = await remoteQuery({
-      cart: {
-        fields: ["id", "payment_collection.*"],
-        filters: { id }
-      }
+      entryPoint: "cart",
+      fields: ["id", "payment_collection.*"],
+      filters: { id }
     })
 
     const cart = carts?.[0]
