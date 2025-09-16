@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { ContainerRegistrationKeys, Modules } from "@medusajs/utils"
+import { ContainerRegistrationKeys } from "@medusajs/utils"
 
 export const POST = async (req: Request & { scope: any }, res: Response) => {
   const { id } = req.params
@@ -38,62 +38,43 @@ export const POST = async (req: Request & { scope: any }, res: Response) => {
     console.log("Found payment collection:", paymentCollection ? "yes" : "no")
 
     if (!paymentCollection) {
-      console.log("No payment collection found, redirecting to create one first...")
-      return res.status(400).json({
-        type: "invalid_data",
-        message: "Payment collection must be created first. Please call POST /store/payment-collections with cart_id."
-      })
-    }
-
-    // Check if payment session already exists for this provider
-    const existingSession = paymentCollection.payment_sessions?.find(
-      (session: any) => session.provider_id === provider_id
-    )
-
-    if (existingSession) {
-      console.log("Payment session already exists for provider:", provider_id)
-      return res.status(200).json({
-        cart: {
-          ...cart,
-          payment_collection: {
-            ...paymentCollection,
-            payment_sessions: [existingSession]
-          }
-        }
-      })
-    }
-
-    // Create payment session using the existing payment collection endpoint logic
-    // This mimics what the /store/payment-collections/:id/payment-sessions endpoint would do
-    const paymentModuleService = req.scope.resolve(Modules.PAYMENT)
-    
-    if (!paymentModuleService) {
-      throw new Error("Payment module service not found")
-    }
-
-    const paymentSession = await paymentModuleService.createPaymentSession(
-      paymentCollection.id,
-      {
-        provider_id,
-        currency_code: paymentCollection.currency_code,
-        amount: paymentCollection.amount,
-        data
+      // Create payment collection first using the working endpoint logic
+      console.log("Creating payment collection for cart...")
+      
+      // Use internal service to create payment collection
+      const paymentModuleService = req.scope.resolve("paymentModuleService")
+      
+      if (!paymentModuleService) {
+        return res.status(500).json({
+          type: "service_error",
+          message: "Payment service not available"
+        })
       }
-    )
 
-    console.log("Payment session created:", !!paymentSession)
+      const createdCollections = await paymentModuleService.createPaymentCollections([{
+        cart_id: cart.id,
+        amount: cart.total || 0,
+        currency_code: cart.currency_code || "eur",
+        region_id: cart.region_id
+      }])
+      
+      paymentCollection = createdCollections[0]
+      console.log("Created payment collection:", paymentCollection.id)
+    }
 
+    // Return the cart with payment collection (without trying to create payment session)
+    // Frontend should call /store/payment-collections/:id/payment-sessions separately
     res.status(200).json({
       cart: {
         ...cart,
         payment_collection: {
           ...paymentCollection,
-          payment_sessions: [paymentSession]
+          payment_sessions: paymentCollection.payment_sessions || []
         }
       }
     })
   } catch (error) {
-    console.error("Error creating payment session:", error)
+    console.error("Error in cart payment-sessions:", error)
     console.error("Error stack:", error.stack)
     res.status(500).json({
       type: "unknown_error",
