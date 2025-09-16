@@ -1,6 +1,20 @@
 import { loadEnv, defineConfig, Modules } from '@medusajs/framework/utils'
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
+// Determine whether to enable Stripe safely
+const STRIPE_API_KEY = process.env.STRIPE_API_KEY?.trim()
+const STRIPE_ENABLED = (process.env.STRIPE_ENABLED ?? 'true').toLowerCase() !== 'false'
+const ENABLE_STRIPE = !!STRIPE_API_KEY && STRIPE_ENABLED
+
+// TEMP: Debug logs to validate env in production (safe masked output)
+try {
+  const prefix = STRIPE_API_KEY ? STRIPE_API_KEY.slice(0, 7) : 'undefined'
+  // eslint-disable-next-line no-console
+  console.log(
+    `[config] Stripe enabled=${ENABLE_STRIPE} | keyPresent=${!!STRIPE_API_KEY} | keyPrefix=${prefix}`
+  )
+} catch {}
+
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
@@ -44,21 +58,25 @@ module.exports = defineConfig({
         ],
       },
     },
-    // Payments: Stripe
-    {
-      resolve: "@medusajs/medusa/payment",
-      options: {
-        providers: [
+    // Payments: Stripe (only register if explicitly enabled and API key provided)
+    ...(ENABLE_STRIPE
+      ? [
           {
-            resolve: "@medusajs/medusa/payment-stripe",
-            id: "stripe",
+            resolve: "@medusajs/medusa/payment",
             options: {
-              api_key: process.env.STRIPE_API_KEY,
-              webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
+              providers: [
+                {
+                  resolve: "@medusajs/medusa/payment-stripe",
+                  id: "stripe",
+                  options: {
+                    apiKey: STRIPE_API_KEY,
+                    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+                  },
+                },
+              ],
             },
           },
-        ],
-      },
-    },
+        ]
+      : []),
   ],
 })
