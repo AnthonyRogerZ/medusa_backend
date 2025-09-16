@@ -1,7 +1,7 @@
-import { MedusaRequest, MedusaResponse } from "@medusajs/medusa"
-import { ContainerRegistrationKeys } from "@medusajs/utils"
+import { Request, Response } from "express"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/utils"
 
-export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
+export const POST = async (req: Request & { scope: any }, res: Response) => {
   const { id } = req.params
   const { provider_id, data = {} } = req.body
 
@@ -10,10 +10,9 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     
     // Get cart with payment collection
     const [cart] = await remoteQuery({
-      entryPoint: "cart",
-      variables: { 
-        filters: { id },
-        include_fields: ["payment_collection.*"]
+      cart: {
+        fields: ["id", "payment_collection.*"],
+        filters: { id }
       }
     })
 
@@ -32,7 +31,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     }
 
     // Create payment session for the payment collection
-    const paymentModuleService = req.scope.resolve("paymentModuleService")
+    const paymentModuleService = req.scope.resolve(Modules.PAYMENT)
     
     const paymentSession = await paymentModuleService.createPaymentSession(
       cart.payment_collection.id,
