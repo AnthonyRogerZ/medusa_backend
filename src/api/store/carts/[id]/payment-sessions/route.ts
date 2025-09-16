@@ -27,11 +27,28 @@ export const POST = async (req: Request & { scope: any }, res: Response) => {
       })
     }
 
-    if (!cart.payment_collection) {
-      return res.status(400).json({
-        type: "invalid_data",
-        message: "Cart does not have a payment collection"
+    // Get or create payment collection for the cart
+    let paymentCollection = cart.payment_collection
+    
+    if (!paymentCollection) {
+      console.log("Cart has no payment collection, creating one...")
+      
+      // Get cart total and currency
+      const cartTotal = cart.total || 0
+      const cartCurrency = cart.currency_code || "usd"
+      
+      const paymentModuleService = req.scope.resolve(Modules.PAYMENT)
+      console.log("Payment module service resolved:", !!paymentModuleService)
+      
+      // Create payment collection for the cart
+      paymentCollection = await paymentModuleService.createPaymentCollection({
+        cart_id: cart.id,
+        amount: cartTotal,
+        currency_code: cartCurrency,
+        region_id: cart.region_id
       })
+      
+      console.log("Created payment collection:", paymentCollection.id)
     }
 
     // Create payment session for the payment collection
@@ -40,14 +57,14 @@ export const POST = async (req: Request & { scope: any }, res: Response) => {
     
     const paymentSessionData = {
       provider_id,
-      currency_code: cart.payment_collection.currency_code,
-      amount: cart.payment_collection.amount,
+      currency_code: paymentCollection.currency_code,
+      amount: paymentCollection.amount,
       data
     }
     console.log("Creating payment session with data:", paymentSessionData)
     
     const paymentSession = await paymentModuleService.createPaymentSession(
-      cart.payment_collection.id,
+      paymentCollection.id,
       paymentSessionData
     )
 
@@ -57,7 +74,7 @@ export const POST = async (req: Request & { scope: any }, res: Response) => {
       cart: {
         ...cart,
         payment_collection: {
-          ...cart.payment_collection,
+          ...paymentCollection,
           payment_sessions: [paymentSession]
         }
       }
