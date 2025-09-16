@@ -58,25 +58,22 @@ module.exports = defineConfig({
         ],
       },
     },
-    // Payments: Stripe (only register if explicitly enabled and API key provided)
-    ...(ENABLE_STRIPE
-      ? [
+    // Payments: Stripe - Always register the module
+    {
+      resolve: "@medusajs/medusa/payment",
+      key: Modules.PAYMENT,
+      options: {
+        providers: [
           {
-            resolve: "@medusajs/medusa/payment",
+            resolve: "@medusajs/medusa/payment-stripe",
+            id: "stripe",
             options: {
-              providers: [
-                {
-                  resolve: "@medusajs/medusa/payment-stripe",
-                  id: "stripe",
-                  options: {
-                    apiKey: STRIPE_API_KEY,
-                    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-                  },
-                },
-              ],
+              apiKey: STRIPE_API_KEY,
+              webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
             },
           },
-        ]
-      : []),
+        ],
+      },
+    },
   ],
 })
