@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { ContainerRegistrationKeys } from "@medusajs/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/utils"
 
 export const POST = async (req: Request & { scope: any }, res: Response) => {
   const { id } = req.params
@@ -65,7 +65,7 @@ export const POST = async (req: Request & { scope: any }, res: Response) => {
 
     // Create payment session using the existing payment collection endpoint logic
     // This mimics what the /store/payment-collections/:id/payment-sessions endpoint would do
-    const paymentModuleService = req.scope.resolve("paymentModuleService")
+    const paymentModuleService = req.scope.resolve(Modules.PAYMENT)
     
     if (!paymentModuleService) {
       throw new Error("Payment module service not found")
