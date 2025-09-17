@@ -4,11 +4,11 @@ import corsMiddleware from "./middlewares/cors"
 export default defineMiddlewares({
   routes: [
     {
-      matcher: "/store/carts/*/payment-sessions",
+      matcher: "/store/*",
       middlewares: [corsMiddleware],
     },
     {
-      matcher: "/store/carts/*/payment-session",
+      matcher: "/admin/*",
       middlewares: [corsMiddleware],
     },
   ],
