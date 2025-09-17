@@ -29,7 +29,7 @@ const corsMiddleware = (req: Request, res: Response, next: NextFunction) => {
   
   res.header("Access-Control-Allow-Credentials", "true")
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-publishable-api-key, Cookie, Set-Cookie")
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-medusa-access-token, Cookie, Set-Cookie")
   res.header("Access-Control-Expose-Headers", "Set-Cookie")
   
   // Gérer les requêtes preflight OPTIONS

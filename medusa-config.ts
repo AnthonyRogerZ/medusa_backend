@@ -1,19 +1,6 @@
 import { loadEnv, defineConfig, Modules } from '@medusajs/framework/utils'
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
-// Determine whether to enable Stripe safely
-const STRIPE_API_KEY = process.env.STRIPE_API_KEY?.trim()
-const STRIPE_ENABLED = (process.env.STRIPE_ENABLED ?? 'true').toLowerCase() !== 'false'
-const ENABLE_STRIPE = !!STRIPE_API_KEY && STRIPE_ENABLED
-
-// TEMP: Debug logs to validate env in production (safe masked output)
-try {
-  const prefix = STRIPE_API_KEY ? STRIPE_API_KEY.slice(0, 7) : 'undefined'
-  // eslint-disable-next-line no-console
-  console.log(
-    `[config] Stripe enabled=${ENABLE_STRIPE} | keyPresent=${!!STRIPE_API_KEY} | keyPrefix=${prefix}`
-  )
-} catch {}
 
 module.exports = defineConfig({
   projectConfig: {
@@ -53,24 +40,6 @@ module.exports = defineConfig({
               additional_client_config: {
                 forcePathStyle: true, // requis/recommandé pour R2
               },
-            },
-          },
-        ],
-      },
-    },
-    {
-      resolve: "@medusajs/medusa/payment",
-      options: {
-        providers: [
-          {
-            resolve: "@medusajs/medusa/payment-stripe",
-            id: "pp_stripe_stripe",
-            options: {
-              apiKey: process.env.STRIPE_API_KEY,
-              webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-              // Ensure automatic capture to avoid PaymentIntent status "requires_capture"
-              // Classic flow: confirm on the client, then complete the cart
-              capture: true,
             },
           },
         ],

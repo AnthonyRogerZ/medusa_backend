@@ -14,7 +14,6 @@ export default async function ({ app }: any) {
     allowedHeaders: [
       "Content-Type",
       "Authorization",
-      "x-publishable-api-key",
       "x-medusa-access-token",
       "Origin",
       "Accept",
@@ -36,7 +35,7 @@ export default async function ({ app }: any) {
       res.setHeader(
         "Access-Control-Allow-Headers",
         req.headers["access-control-request-headers"] ||
-          "Content-Type,Authorization,x-publishable-api-key,x-medusa-access-token"
+          "Content-Type,Authorization,x-medusa-access-token"
       )
     }
     res.status(204).end()

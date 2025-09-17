@@ -14,7 +14,6 @@ export default async function ({ app }: any) {
     allowedHeaders: [
       "Content-Type",
       "Authorization",
-      "x-publishable-api-key",
       "x-medusa-access-token",
       "Origin",
       "Accept",
