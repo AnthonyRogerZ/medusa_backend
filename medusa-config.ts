@@ -20,9 +20,9 @@ module.exports = defineConfig({
     databaseUrl: process.env.DATABASE_URL,
     redisUrl: process.env.REDIS_URL,
     http: {
-      storeCors: "https://gomgom-bonbons.vercel.app,http://localhost:3000",
-      adminCors: "http://localhost:7001",
-      authCors: "https://gomgom-bonbons.vercel.app,http://localhost:3000",
+      storeCors: "*", // TEMPORAIRE - Accepte tout pour résoudre le problème CORS
+      adminCors: "*",
+      authCors: "*",
       jwtSecret: process.env.JWT_SECRET || "supersecret",
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     }
