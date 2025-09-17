@@ -7,5 +7,9 @@ export default defineMiddlewares({
       matcher: "/store/carts/*/payment-sessions",
       middlewares: [corsMiddleware],
     },
+    {
+      matcher: "/store/carts/*/payment-session",
+      middlewares: [corsMiddleware],
+    },
   ],
 })
