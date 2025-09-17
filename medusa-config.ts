@@ -37,6 +37,11 @@ module.exports = defineConfig({
         ],
       },
     },
+    // Inventory module for stock management
+    {
+      resolve: "@medusajs/medusa/inventory",
+      key: Modules.INVENTORY,
+    },
     // File storage via Cloudflare R2 (S3-compatible)
     {
       resolve: "@medusajs/medusa/file",
