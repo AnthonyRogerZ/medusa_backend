@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { ContainerRegistrationKeys } from "@medusajs/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/utils"
 
 export const POST = async (req: Request & { scope: any }, res: Response) => {
   const { id } = req.params
@@ -42,7 +42,7 @@ export const POST = async (req: Request & { scope: any }, res: Response) => {
       console.log("Creating payment collection for cart...")
       
       // Use internal service to create payment collection
-      const paymentModuleService = req.scope.resolve("paymentModuleService")
+      const paymentModuleService = req.scope.resolve(Modules.PAYMENT)
       
       if (!paymentModuleService) {
         return res.status(500).json({
@@ -85,7 +85,7 @@ export const POST = async (req: Request & { scope: any }, res: Response) => {
     
     try {
       // Use the working payment-collections endpoint internally
-      const paymentCollectionService = req.scope.resolve("paymentModuleService")
+      const paymentCollectionService = req.scope.resolve(Modules.PAYMENT)
       
       if (!paymentCollectionService) {
         throw new Error("Payment module service not available")
