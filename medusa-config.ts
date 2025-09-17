@@ -22,6 +22,21 @@ module.exports = defineConfig({
         providers: [{ resolve: "@medusajs/medusa/auth-emailpass", id: "emailpass" }],
       },
     },
+    // Payment module with Stripe provider
+    {
+      resolve: "@medusajs/medusa/payment",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/medusa/payment-stripe",
+            id: "stripe",
+            options: {
+              apiKey: process.env.STRIPE_API_KEY,
+            },
+          },
+        ],
+      },
+    },
     // File storage via Cloudflare R2 (S3-compatible)
     {
       resolve: "@medusajs/medusa/file",
