@@ -10,9 +10,10 @@ const corsMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const origin = req.headers.origin
   
   // Debug logs pour diagnostiquer le problème
-  if (req.path === "/store/me") {
+  if (req.path.includes("/store/me") || req.path.includes("/store/customers")) {
     console.log(`[CORS DEBUG] ${req.method} ${req.path} - Origin: ${origin}`)
     console.log(`[CORS DEBUG] Allowed origins:`, allowedOrigins)
+    console.log(`[CORS DEBUG] Full URL:`, req.url)
   }
   
   // Toujours définir les en-têtes CORS
@@ -33,8 +34,8 @@ const corsMiddleware = (req: Request, res: Response, next: NextFunction) => {
   
   // Gérer les requêtes preflight OPTIONS
   if (req.method === "OPTIONS") {
-    if (req.path === "/store/me") {
-      console.log(`[CORS DEBUG] Handling OPTIONS preflight for /store/me`)
+    if (req.path.includes("/store/me") || req.path.includes("/store/customers")) {
+      console.log(`[CORS DEBUG] Handling OPTIONS preflight for ${req.path}`)
     }
     return res.status(200).end()
   }
