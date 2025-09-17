@@ -1,7 +1,7 @@
 import cors from "cors"
-import type { MedusaContainer } from "@medusajs/framework"
 
-export default async function ({ app }: MedusaContainer) {
+// Using a relaxed type to align with the runtime container shape that exposes `app`
+export default async function ({ app }: any) {
   const origins = [
     "https://gomgom-bonbons.vercel.app",
     "http://localhost:3000",
