@@ -68,6 +68,9 @@ module.exports = defineConfig({
             options: {
               apiKey: process.env.STRIPE_API_KEY,
               webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+              // Ensure automatic capture to avoid PaymentIntent status "requires_capture"
+              // Classic flow: confirm on the client, then complete the cart
+              capture: true,
             },
           },
         ],
