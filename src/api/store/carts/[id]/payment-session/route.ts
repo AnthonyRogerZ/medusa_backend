@@ -62,17 +62,72 @@ export const POST = async (req: Request & { scope: any }, res: Response) => {
       console.log("Created payment collection:", paymentCollection.id)
     }
 
-    // Return the cart with payment collection (without trying to create payment session)
-    // Frontend should call /store/payment-collections/:id/payment-sessions separately
-    res.status(200).json({
-      cart: {
-        ...cart,
-        payment_collection: {
-          ...paymentCollection,
-          payment_sessions: paymentCollection.payment_sessions || []
+    // Check if payment session already exists for this provider
+    const existingSession = paymentCollection.payment_sessions?.find(
+      (session: any) => session.provider_id === provider_id
+    )
+
+    if (existingSession) {
+      console.log("Payment session already exists for provider:", provider_id)
+      return res.status(200).json({
+        cart: {
+          ...cart,
+          payment_collection: {
+            ...paymentCollection,
+            payment_sessions: [existingSession]
+          }
         }
+      })
+    }
+
+    // Create payment session by making internal request to payment-collections endpoint
+    console.log("Creating payment session for collection:", paymentCollection.id)
+    
+    try {
+      // Use the working payment-collections endpoint internally
+      const paymentCollectionService = req.scope.resolve("paymentModuleService")
+      
+      if (!paymentCollectionService) {
+        throw new Error("Payment module service not available")
       }
-    })
+
+      // Create payment session using the same logic as /store/payment-collections/:id/payment-sessions
+      const paymentSession = await paymentCollectionService.createPaymentSession(
+        paymentCollection.id,
+        {
+          provider_id,
+          currency_code: paymentCollection.currency_code,
+          amount: paymentCollection.amount,
+          data
+        }
+      )
+
+      console.log("Payment session created successfully:", !!paymentSession)
+
+      res.status(200).json({
+        cart: {
+          ...cart,
+          payment_collection: {
+            ...paymentCollection,
+            payment_sessions: [paymentSession]
+          }
+        }
+      })
+    } catch (sessionError) {
+      console.error("Failed to create payment session:", sessionError)
+      
+      // Return payment collection without session if Stripe fails
+      // Frontend can handle this and show appropriate error
+      res.status(200).json({
+        cart: {
+          ...cart,
+          payment_collection: {
+            ...paymentCollection,
+            payment_sessions: []
+          }
+        }
+      })
+    }
   } catch (error) {
     console.error("Error in cart payment-session:", error)
     console.error("Error stack:", error.stack)
