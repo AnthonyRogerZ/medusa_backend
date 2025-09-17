@@ -3,7 +3,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/utils"
 
 export const POST = async (req: Request & { scope: any }, res: Response) => {
   const { id } = req.params
-  const { provider_id = "stripe", data = {} } = req.body
+  const { provider_id = "pp_stripe_stripe", data = {} } = req.body
 
   try {
     console.log("Creating payment session for cart:", id, "with provider:", provider_id)
