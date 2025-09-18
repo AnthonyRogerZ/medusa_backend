@@ -13,7 +13,7 @@ const corsMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const origin = req.headers.origin
   
   // Debug logs pour diagnostiquer le problème
-  if (req.path.includes("/store/me") || req.path.includes("/store/customers")) {
+  if (req.path.includes("/store/")) {
     console.log(`[CORS DEBUG] ${req.method} ${req.path} - Origin: ${origin}`)
     console.log(`[CORS DEBUG] Allowed origins:`, allowedOrigins)
     console.log(`[CORS DEBUG] Full URL:`, req.url)
@@ -36,12 +36,12 @@ const corsMiddleware = (req: Request, res: Response, next: NextFunction) => {
   
   res.header("Access-Control-Allow-Credentials", "true")
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-medusa-access-token, Cookie, Set-Cookie")
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-medusa-access-token, x-publishable-api-key, Cookie, Set-Cookie")
   res.header("Access-Control-Expose-Headers", "Set-Cookie")
   
   // Gérer les requêtes preflight OPTIONS
   if (req.method === "OPTIONS") {
-    if (req.path.includes("/store/me") || req.path.includes("/store/customers")) {
+    if (req.path.includes("/store/")) {
       console.log(`[CORS DEBUG] Handling OPTIONS preflight for ${req.path}`)
     }
     return res.status(200).end()
