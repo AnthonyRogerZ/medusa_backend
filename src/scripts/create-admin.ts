@@ -1,30 +1,39 @@
 import { ExecArgs } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
-import { createUserAccountWorkflow } from "@medusajs/medusa/core-flows";
 
 export default async function createAdminUser({ container }: ExecArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
   
-  logger.info("Creating admin user...");
+  logger.info("Creating admin user with password...");
   
   try {
-    // Créer avec votre vraie adresse email
     const adminEmail = "pro.anthony23@gmail.com";
+    const adminPassword = "AdminGomGom2024!";
     
-    const { result } = await createUserAccountWorkflow(container).run({
-      input: {
-        userData: {
-          email: adminEmail,
-          first_name: "Admin",
-          last_name: "GomGom",
-        },
-        authIdentityId: adminEmail,
+    // Utiliser le module d'authentification directement
+    const authModuleService = container.resolve(Modules.AUTH);
+    const userModuleService = container.resolve(Modules.USER);
+    
+    // Créer l'utilisateur
+    const user = await userModuleService.createUsers({
+      email: adminEmail,
+      first_name: "Admin",
+      last_name: "GomGom",
+    });
+    
+    // Créer l'identité d'authentification avec mot de passe
+    await authModuleService.createAuthIdentities({
+      provider_id: "emailpass",
+      entity_id: user.id,
+      provider_metadata: {
+        email: adminEmail,
+        password: adminPassword,
       },
     });
     
     logger.info(`✅ Admin user created successfully!`);
     logger.info(`📧 Email: ${adminEmail}`);
-    logger.info(`🔑 You can now set a password via the admin interface or reset password`);
+    logger.info(`🔑 Password: ${adminPassword}`);
     logger.info(`🌐 Login at: https://medusabackend-production-e0e9.up.railway.app/app/login`);
     
   } catch (error) {
