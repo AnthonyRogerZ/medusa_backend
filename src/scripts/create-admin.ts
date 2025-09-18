@@ -23,13 +23,13 @@ export default async function createAdminUser({ container }: ExecArgs) {
     
     // Créer l'identité d'authentification avec mot de passe
     await authModuleService.createAuthIdentities({
-      provider_id: "emailpass",
+      provider: "emailpass",
       entity_id: user.id,
       provider_metadata: {
         email: adminEmail,
         password: adminPassword,
       },
-    });
+    } as any);
     
     logger.info(`✅ Admin user created successfully!`);
     logger.info(`📧 Email: ${adminEmail}`);
