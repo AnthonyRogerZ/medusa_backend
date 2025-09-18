@@ -14,25 +14,7 @@ module.exports = defineConfig({
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     }
   },
-  plugins: [
-    {
-      resolve: "@medusajs/medusa/notification-sendgrid",
-      options: {
-        api_key: process.env.SENDGRID_API_KEY,
-        from: process.env.SMTP_FROM || "pro.anthony23@gmail.com",
-        // Ou utiliser SMTP direct
-        smtp: {
-          host: process.env.SMTP_HOST || "smtp.gmail.com",
-          port: parseInt(process.env.SMTP_PORT || "587"),
-          secure: false,
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASSWORD,
-          },
-        },
-      },
-    },
-  ],
+  plugins: [],
   modules: [
     {
       resolve: "@medusajs/medusa/auth",
