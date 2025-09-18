@@ -3,8 +3,11 @@ import { NextFunction, Request, Response } from "express"
 const corsMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const allowedOrigins = [
     "https://gomgom-bonbons.vercel.app",
+    "https://medusabackend-production-e0e9.up.railway.app",
     "http://localhost:3000",
-    "http://localhost:8000"
+    "http://localhost:8000",
+    "http://localhost:5173",
+    "http://localhost:9000"
   ]
   
   const origin = req.headers.origin
@@ -23,8 +26,12 @@ const corsMiddleware = (req: Request, res: Response, next: NextFunction) => {
       console.log(`[CORS DEBUG] Setting origin to: ${origin}`)
     }
   } else if (!origin) {
-    // Pour les requêtes sans origin (comme les requêtes serveur-à-serveur)
-    res.header("Access-Control-Allow-Origin", "*")
+    // Pour les requêtes sans origin, utiliser le premier domaine autorisé au lieu de *
+    // car * ne fonctionne pas avec Access-Control-Allow-Credentials: true
+    res.header("Access-Control-Allow-Origin", allowedOrigins[0])
+  } else {
+    // Origin non autorisée, ne pas définir d'en-tête CORS
+    console.log(`[CORS DEBUG] Origin non autorisée: ${origin}`)
   }
   
   res.header("Access-Control-Allow-Credentials", "true")
