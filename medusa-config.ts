@@ -31,6 +31,22 @@ module.exports = defineConfig({
         redisUrl: process.env.REDIS_URL,
       },
     },
+    // Locking module with Redis provider
+    {
+      resolve: "@medusajs/locking",
+      key: Modules.LOCKING,
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/locking-redis",
+            id: "redis",
+            options: {
+              redisUrl: process.env.REDIS_URL,
+            },
+          },
+        ],
+      },
+    },
     {
       resolve: "@medusajs/cache-redis",
       key: Modules.CACHE,
