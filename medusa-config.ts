@@ -47,6 +47,16 @@ module.exports = defineConfig({
         ],
       },
     },
+    // Workflow engine backed by Redis
+    {
+      resolve: "@medusajs/workflow-engine-redis",
+      key: Modules.WORKFLOW_ENGINE,
+      options: {
+        redis: {
+          url: process.env.REDIS_URL,
+        },
+      },
+    },
     {
       resolve: "@medusajs/cache-redis",
       key: Modules.CACHE,
