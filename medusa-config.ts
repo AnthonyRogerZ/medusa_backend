@@ -23,6 +23,31 @@ module.exports = defineConfig({
   },
   plugins: [],
   modules: [
+    // Redis-backed infrastructure modules
+    {
+      resolve: "@medusajs/event-bus-redis",
+      options: {
+        redisUrl: process.env.REDIS_URL,
+      },
+    },
+    {
+      resolve: "@medusajs/locking-redis",
+      options: {
+        redisUrl: process.env.REDIS_URL,
+      },
+    },
+    {
+      resolve: "@medusajs/workflow-engine-redis",
+      options: {
+        redisUrl: process.env.REDIS_URL,
+      },
+    },
+    {
+      resolve: "@medusajs/cache-redis",
+      options: {
+        redisUrl: process.env.REDIS_URL,
+      },
+    },
     {
       resolve: "@medusajs/medusa/auth",
       key: Modules.AUTH,
