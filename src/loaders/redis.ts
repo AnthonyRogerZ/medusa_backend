@@ -1,20 +1,17 @@
 import { Redis } from '@upstash/redis/cloudflare'
 import type { MedusaContainer } from "@medusajs/framework"
 
-interface ConfigModule {
-  projectConfig: {
-    redisUrl: string
-    redisToken?: string
-  }
-}
-
 interface RedisService {
   getClient: () => Redis
 }
 
 const redisLoader = async (container: MedusaContainer) => {
-  const configModule = container.resolve<ConfigModule>("configModule")
-  const { redisUrl, redisToken } = configModule.projectConfig
+  // Get config with type assertion to avoid TypeScript errors
+  const configModule = container.resolve("configModule")
+  
+  // Safely get the Redis URL and token
+  const redisUrl = configModule?.projectConfig?.redisUrl
+  const redisToken = (configModule?.projectConfig as any)?.redisToken
   
   if (!redisUrl) {
     console.warn('Redis URL not found, using in-memory cache')
@@ -27,11 +24,24 @@ const redisLoader = async (container: MedusaContainer) => {
       token: redisToken || '',
     })
 
-    // Test the connection
-    await client.set('medusa:test', 'connected')
-    const test = await client.get('medusa:test')
+    // Test the connection with a timeout
+    const testConnection = async () => {
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Redis connection timeout')), 5000)
+      )
+      
+      const connect = client.set('medusa:test', 'connected', { ex: 60 })
+      
+      return Promise.race([connect, timeout])
+        .then(async () => {
+          const test = await client.get('medusa:test')
+          return test === 'connected'
+        })
+    }
+
+    const isConnected = await testConnection()
     
-    if (test !== 'connected') {
+    if (!isConnected) {
       throw new Error('Redis connection test failed')
     }
 
@@ -45,11 +55,11 @@ const redisLoader = async (container: MedusaContainer) => {
       resolve: () => redisService
     })
     
-    console.log('Upstash Redis connected successfully')
+    console.log('✅ Upstash Redis connected successfully')
   } catch (err) {
-    console.error('Error connecting to Upstash Redis:', err)
+    console.error('❌ Error connecting to Upstash Redis:', err)
     // Don't throw to allow the application to start with in-memory cache
-    console.warn('Falling back to in-memory cache')
+    console.warn('⚠️ Falling back to in-memory cache')
   }
 }
 

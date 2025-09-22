@@ -6,6 +6,7 @@ module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
     redisUrl: process.env.UPSTASH_REDIS_REST_URL || process.env.REDIS_URL,
+    // @ts-ignore - This is a custom property
     redisToken: process.env.UPSTASH_REDIS_REST_TOKEN,
     http: {
       storeCors: process.env.STORE_CORS || "https://gomgom-bonbons.vercel.app,http://localhost:3000,http://localhost:8000,http://127.0.0.1:3000",
