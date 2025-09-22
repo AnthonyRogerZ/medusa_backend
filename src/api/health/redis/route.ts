@@ -1,8 +1,22 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
+// Simple in-memory throttle to reduce Redis commands
+let lastResult: any | null = null
+let lastCheckedAt = 0
+let lastRestWriteAt = 0
+
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
+  const q = req.query?.force
+  const force = typeof q === "string" ? q === "1" : Array.isArray(q) ? q.includes("1") : false
+  const now = Date.now()
+
+  if (!force && lastResult && now - lastCheckedAt < 60_000) {
+    return res.json(lastResult)
+  }
+
   const scope = req.scope
   const result: any = {
+    ok: false,
     ioredis: {
       connected: false,
       error: null as null | string,
@@ -11,6 +25,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       connected: false,
       error: null as null | string,
     },
+    cached_for_seconds: 60,
   }
 
   // Test ioredis via the event-bus redis connection (already created by module loader)
@@ -26,14 +41,22 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
     result.ioredis.error = e?.message || String(e)
   }
 
-  // Test Upstash REST via our custom redis service
+  // Test Upstash REST via our custom redis service — prefer GET-only; avoid writes unless needed
   try {
     const redisService = scope.resolve("redis") as { getClient: () => any }
     const client = redisService?.getClient?.()
     if (client) {
       const key = "health:redis:rest"
-      await client.set(key, "ok", { ex: 30 })
-      const val = await client.get(key)
+      let val: string | null = null
+      try {
+        val = await client.get(key)
+      } catch {}
+      if (val !== "ok" && (force || now - lastRestWriteAt > 10 * 60_000)) {
+        // Write at most every 10 minutes unless force=1
+        await client.set(key, "ok", { ex: 120 })
+        lastRestWriteAt = now
+        val = await client.get(key)
+      }
       result.upstash_rest.connected = val === "ok"
     } else {
       result.upstash_rest.error = "redis service not available"
@@ -42,8 +65,9 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
     result.upstash_rest.error = e?.message || String(e)
   }
 
-  res.json({
-    ok: result.ioredis.connected || result.upstash_rest.connected,
-    ...result,
-  })
+  result.ok = result.ioredis.connected || result.upstash_rest.connected
+  lastResult = result
+  lastCheckedAt = now
+
+  res.json(result)
 }
