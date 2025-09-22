@@ -9,19 +9,19 @@ const redisLoader = async (container: MedusaContainer) => {
   // Get config with type assertion to avoid TypeScript errors
   const configModule = container.resolve("configModule")
   
-  // Safely get the Redis URL and token
-  const redisUrl = configModule?.projectConfig?.redisUrl
-  const redisToken = (configModule?.projectConfig as any)?.redisToken
+  // Use Upstash REST credentials from custom config fields
+  const redisRestUrl = (configModule?.projectConfig as any)?.redisRestUrl
+  const redisRestToken = (configModule?.projectConfig as any)?.redisRestToken
   
-  if (!redisUrl) {
-    console.warn('Redis URL not found, using in-memory cache')
+  if (!redisRestUrl || !redisRestToken) {
+    console.warn('Upstash REST credentials not found, using in-memory cache')
     return
   }
 
   try {
     const client = new Redis({
-      url: redisUrl,
-      token: redisToken || '',
+      url: redisRestUrl,
+      token: redisRestToken,
     })
 
     // Test the connection with a timeout
@@ -55,9 +55,9 @@ const redisLoader = async (container: MedusaContainer) => {
       resolve: () => redisService
     })
     
-    console.log('✅ Upstash Redis connected successfully')
+    console.log('✅ Upstash Redis (REST) connected successfully')
   } catch (err) {
-    console.error('❌ Error connecting to Upstash Redis:', err)
+    console.error('❌ Error connecting to Upstash Redis (REST):', err)
     // Don't throw to allow the application to start with in-memory cache
     console.warn('⚠️ Falling back to in-memory cache')
   }

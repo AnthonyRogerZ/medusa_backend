@@ -5,9 +5,14 @@ loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
-    redisUrl: process.env.UPSTASH_REDIS_REST_URL || process.env.REDIS_URL,
-    // @ts-ignore - This is a custom property
-    redisToken: process.env.UPSTASH_REDIS_REST_TOKEN,
+    // IMPORTANT: This must be a Redis protocol URL (e.g., rediss://:password@host:port)
+    // Prefer REDIS_URL (Railway/Upstash Redis TLS) or fallback to UPSTASH_REDIS_URL
+    redisUrl: process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL,
+    // Expose Upstash REST credentials as custom fields for our custom loader only
+    // @ts-ignore - custom property for Upstash REST client
+    redisRestUrl: process.env.UPSTASH_REDIS_REST_URL,
+    // @ts-ignore - custom property for Upstash REST client
+    redisRestToken: process.env.UPSTASH_REDIS_REST_TOKEN,
     http: {
       storeCors: process.env.STORE_CORS || "https://gomgom-bonbons.vercel.app,http://localhost:3000,http://localhost:8000,http://127.0.0.1:3000",
       adminCors: process.env.ADMIN_CORS || "https://medusabackend-production-e0e9.up.railway.app,http://localhost:3000,http://localhost:5173,http://localhost:9000,https://gomgom-bonbons.vercel.app,http://127.0.0.1:3000",
