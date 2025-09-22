@@ -8,13 +8,16 @@ interface RedisService {
 const redisLoader = async (container: MedusaContainer) => {
   // Get config with type assertion to avoid TypeScript errors
   const configModule = container.resolve("configModule")
+  const logger = container.resolve("logger")
   
   // Use Upstash REST credentials from custom config fields
   const redisRestUrl = (configModule?.projectConfig as any)?.redisRestUrl
   const redisRestToken = (configModule?.projectConfig as any)?.redisRestToken
-  
+
+  logger.info(`Upstash REST loader: starting. URL present=${!!redisRestUrl}, token present=${!!redisRestToken}`)
+
   if (!redisRestUrl || !redisRestToken) {
-    console.warn('Upstash REST credentials not found, using in-memory cache')
+    logger.warn('Upstash REST credentials not found, using in-memory cache')
     return
   }
 
@@ -55,11 +58,12 @@ const redisLoader = async (container: MedusaContainer) => {
       resolve: () => redisService
     })
     
-    console.log('✅ Upstash Redis (REST) connected successfully')
+    logger.info('✅ Upstash Redis (REST) connected successfully')
+    logger.info('Upstash REST loader: finished')
   } catch (err) {
-    console.error('❌ Error connecting to Upstash Redis (REST):', err)
+    logger.error(`❌ Error connecting to Upstash Redis (REST): ${err}`)
     // Don't throw to allow the application to start with in-memory cache
-    console.warn('⚠️ Falling back to in-memory cache')
+    logger.warn('⚠️ Falling back to in-memory cache')
   }
 }
 
