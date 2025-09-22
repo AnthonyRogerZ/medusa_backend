@@ -32,22 +32,6 @@ module.exports = defineConfig({
       },
     },
     {
-      resolve: "@medusajs/locking-redis",
-      key: Modules.LOCKING,
-      options: {
-        redisUrl: process.env.REDIS_URL,
-      },
-    },
-    {
-      resolve: "@medusajs/workflow-engine-redis",
-      key: Modules.WORKFLOW_ENGINE,
-      options: {
-        redis: {
-          url: process.env.REDIS_URL,
-        },
-      },
-    },
-    {
       resolve: "@medusajs/cache-redis",
       key: Modules.CACHE,
       options: {
