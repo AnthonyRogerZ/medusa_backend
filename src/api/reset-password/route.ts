@@ -1,11 +1,16 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+
+interface ResetPasswordBody {
+  email: string;
+  token: string;
+  password: string;
+}
 
 export async function POST(
   req: MedusaRequest,
   res: MedusaResponse
-): Promise<void> {
-  const { email, token, password } = req.body
+): Promise<MedusaResponse> {
+  const { email, token, password } = req.body as ResetPasswordBody
 
   if (!email || !token || !password) {
     return res.status(400).json({
@@ -15,31 +20,32 @@ export async function POST(
   }
 
   try {
-    const authModuleService = req.scope.resolve(ContainerRegistrationKeys.AUTH_MODULE)
-    
-    // Utiliser la méthode updateProvider pour changer le mot de passe avec le token
-    await authModuleService.updateProvider({
-      provider: "emailpass",
-      identifier: email,
-      token: token,
-      password: password
+    // Faire un appel direct à l'API auth interne
+    const response = await fetch(`${req.protocol}://${req.get('host')}/auth/customer/emailpass/update`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        identifier: email,
+        token: token,
+        password: password
+      })
     })
 
-    res.status(200).json({ 
-      success: true,
-      message: "Password reset successfully" 
-    })
+    if (response.ok) {
+      return res.status(200).json({ 
+        success: true,
+        message: "Password reset successfully" 
+      })
+    } else {
+      const errorData = await response.json()
+      return res.status(response.status).json(errorData)
+    }
   } catch (error) {
     console.error("Password reset error:", error)
     
-    if (error.message?.includes("Invalid token") || error.message?.includes("token")) {
-      return res.status(401).json({
-        type: "unauthorized",
-        message: "Invalid or expired token"
-      })
-    }
-    
-    res.status(500).json({
+    return res.status(500).json({
       type: "server_error",
       message: "Failed to reset password"
     })
