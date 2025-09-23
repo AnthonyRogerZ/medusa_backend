@@ -68,7 +68,17 @@ module.exports = defineConfig({
       resolve: "@medusajs/medusa/auth",
       key: Modules.AUTH,
       options: {
-        providers: [{ resolve: "@medusajs/medusa/auth-emailpass", id: "emailpass" }],
+        providers: [
+          { 
+            resolve: "@medusajs/medusa/auth-emailpass", 
+            id: "emailpass",
+            options: {
+              // Configuration pour les tokens de reset password
+              resetPasswordTokenExpiry: 900, // 15 minutes en secondes
+              resetPasswordTokenLength: 64   // Longueur du token pour plus de sécurité
+            }
+          }
+        ],
       },
     },
     // Payment module with Stripe provider
