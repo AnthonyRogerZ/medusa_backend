@@ -47,14 +47,7 @@ module.exports = defineConfig({
     {
       resolve: "@medusajs/locking",
       key: Modules.LOCKING,
-      options: {
-        providers: [
-          {
-            resolve: "@medusajs/locking-in-memory",
-            id: "in-memory",
-          },
-        ],
-      },
+      // No providers = uses default in-memory locking
     },
     // In-memory workflow engine
     {
