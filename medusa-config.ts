@@ -8,6 +8,55 @@ module.exports = defineConfig({
     // IMPORTANT: This must be a Redis protocol URL (e.g., rediss://:password@host:port)
     // Prefer REDIS_URL (Railway/Upstash Redis TLS) or fallback to UPSTASH_REDIS_URL
     redisUrl: process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL,
+    // Configure Redis connection and TTL settings
+    redisOptions: {
+      // Enable auto-pipelining to reduce round trips
+      enableAutoPipelining: true,
+      // Connection timeout in milliseconds
+      connectTimeout: 10000,
+      // Maximum number of retries per request
+      maxRetriesPerRequest: 3,
+      // Enable auto-resubscribing to channels on reconnection
+      enableOfflineQueue: false,
+      // Key prefix for all keys (to avoid collisions)
+      keyPrefix: 'medusa:',
+      // Enable ready checking to ensure Redis is ready
+      enableReadyCheck: true,
+      // Maximum number of connections in the pool
+      maxConnections: 10,
+      // Minimum number of idle connections to keep in the pool
+      minIdle: 1,
+      // Maximum number of idle connections to keep in the pool
+      maxIdle: 5,
+      // Time in milliseconds after which idle connections are closed
+      idleTimeout: 60000,
+      // Time in milliseconds to wait for a connection to become available
+      acquireTimeout: 10000
+    },
+    // Configure cache TTLs (in seconds)
+    cache_ttl: {
+      product: 1800,      // 30 minutes
+      variant: 1800,      // 30 minutes
+      collection: 7200,   // 2 hours
+      region: 86400,      // 24 hours
+      shipping: 43200,    // 12 hours
+      tax: 86400,         // 24 hours
+      currency: 86400,    // 24 hours
+      store: 86400,       // 24 hours
+      user: 3600,         // 1 hour
+      customer: 3600,     // 1 hour
+      order: 300,         // 5 minutes (shorter TTL for dynamic data)
+      cart: 300,          // 5 minutes (shorter TTL for dynamic data)
+      payment: 300,       // 5 minutes (shorter TTL for sensitive data)
+      refund: 300,        // 5 minutes (shorter TTL for sensitive data)
+      return: 300,        // 5 minutes (shorter TTL for sensitive data)
+      claim: 300,         // 5 minutes (shorter TTL for sensitive data)
+      swap: 300,          // 5 minutes (shorter TTL for dynamic data)
+      invite: 300,        // 5 minutes (shorter TTL for sensitive data)
+      note: 300,          // 5 minutes (shorter TTL for dynamic data)
+      notification: 300,  // 5 minutes (shorter TTL for dynamic data)
+      return_reason: 3600 // 1 hour
+    },
     // Expose Upstash REST credentials as custom fields for our custom loader only
     // @ts-ignore - custom property for Upstash REST client
     redisRestUrl: process.env.UPSTASH_REDIS_REST_URL,
