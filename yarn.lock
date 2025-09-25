@@ -1939,7 +1939,7 @@
   resolved "https://registry.npmjs.org/@medusajs/auth/-/auth-2.9.0.tgz"
   integrity sha512-REMbCP5KKYwZA5ZYLzfz3xASElp7te0q26WCaUm1viom22LcZ4f7X20P1wMq3/vf8kh6m+7h+YORcATuA+2nbA==
 
-"@medusajs/cache-inmemory@2.9.0":
+"@medusajs/cache-inmemory@^2.9.0", "@medusajs/cache-inmemory@2.9.0":
   version "2.9.0"
   resolved "https://registry.npmjs.org/@medusajs/cache-inmemory/-/cache-inmemory-2.9.0.tgz"
   integrity sha512-PdnzOJJRbr+v3jFjV9wYDQhGtEuf1Uv61EFRVlDyR9VkpK7QBNrk3ajsrFcpBug5+r+kad9dm+DiB2CgGjKQpg==
@@ -2046,7 +2046,7 @@
     react-router-dom "6.20.1"
     zod "3.25.76"
 
-"@medusajs/event-bus-local@2.9.0":
+"@medusajs/event-bus-local@^2.9.0", "@medusajs/event-bus-local@2.9.0":
   version "2.9.0"
   resolved "https://registry.npmjs.org/@medusajs/event-bus-local/-/event-bus-local-2.9.0.tgz"
   integrity sha512-ZN6yKL98kUm1qEA02F6rccBU75FVxO6TytqWKRqq3Z+GQZAbdbtUV/iGswPVhyozeoCbS6yI3jW7b1k8QdQqwQ==
@@ -2161,7 +2161,7 @@
   dependencies:
     ioredis "^5.4.1"
 
-"@medusajs/locking@2.9.0":
+"@medusajs/locking@^2.9.0", "@medusajs/locking@2.9.0":
   version "2.9.0"
   resolved "https://registry.npmjs.org/@medusajs/locking/-/locking-2.9.0.tgz"
   integrity sha512-sy8npVZQL/rwi9Pkbk3McvPtYtAr+DfQrXdXf9uO1nspxMfUOE7517CiHdtp7Mwr9WvsnZxRHDcUx8VU3bNj0Q==
@@ -2409,7 +2409,7 @@
     ulid "^2.3.0"
     zod "3.25.76"
 
-"@medusajs/workflow-engine-inmemory@2.9.0":
+"@medusajs/workflow-engine-inmemory@^2.9.0", "@medusajs/workflow-engine-inmemory@2.9.0":
   version "2.9.0"
   resolved "https://registry.npmjs.org/@medusajs/workflow-engine-inmemory/-/workflow-engine-inmemory-2.9.0.tgz"
   integrity sha512-qfKh8FaeDIg3MsHzqDQfSeT2uXk8+Hgbwd2+NUFYXZmYzHtGlc9uT9cRkLsY2zQpG1gLFGZw1YlGit8ylO60aQ==

@@ -22,40 +22,6 @@ module.exports = defineConfig({
       keyPrefix: 'medusa:',
       // Enable ready checking to ensure Redis is ready
       enableReadyCheck: true,
-      // Maximum number of connections in the pool
-      maxConnections: 10,
-      // Minimum number of idle connections to keep in the pool
-      minIdle: 1,
-      // Maximum number of idle connections to keep in the pool
-      maxIdle: 5,
-      // Time in milliseconds after which idle connections are closed
-      idleTimeout: 60000,
-      // Time in milliseconds to wait for a connection to become available
-      acquireTimeout: 10000
-    },
-    // Configure cache TTLs (in seconds)
-    cache_ttl: {
-      product: 1800,      // 30 minutes
-      variant: 1800,      // 30 minutes
-      collection: 7200,   // 2 hours
-      region: 86400,      // 24 hours
-      shipping: 43200,    // 12 hours
-      tax: 86400,         // 24 hours
-      currency: 86400,    // 24 hours
-      store: 86400,       // 24 hours
-      user: 3600,         // 1 hour
-      customer: 3600,     // 1 hour
-      order: 300,         // 5 minutes (shorter TTL for dynamic data)
-      cart: 300,          // 5 minutes (shorter TTL for dynamic data)
-      payment: 300,       // 5 minutes (shorter TTL for sensitive data)
-      refund: 300,        // 5 minutes (shorter TTL for sensitive data)
-      return: 300,        // 5 minutes (shorter TTL for sensitive data)
-      claim: 300,         // 5 minutes (shorter TTL for sensitive data)
-      swap: 300,          // 5 minutes (shorter TTL for dynamic data)
-      invite: 300,        // 5 minutes (shorter TTL for sensitive data)
-      note: 300,          // 5 minutes (shorter TTL for dynamic data)
-      notification: 300,  // 5 minutes (shorter TTL for dynamic data)
-      return_reason: 3600 // 1 hour
     },
     // Expose Upstash REST credentials as custom fields for our custom loader only
     // @ts-ignore - custom property for Upstash REST client
@@ -72,45 +38,36 @@ module.exports = defineConfig({
   },
   plugins: [],
   modules: [
-    // Redis-backed infrastructure modules
+    // Use in-memory alternatives to reduce Redis usage
     {
-      resolve: "@medusajs/event-bus-redis",
+      resolve: "@medusajs/event-bus-local",
       key: Modules.EVENT_BUS,
-      options: {
-        redisUrl: process.env.REDIS_URL,
-      },
     },
-    // Locking module with Redis provider
+    // In-memory locking (sufficient for single instance)
     {
       resolve: "@medusajs/locking",
       key: Modules.LOCKING,
       options: {
         providers: [
           {
-            resolve: "@medusajs/locking-redis",
-            id: "redis",
-            options: {
-              redisUrl: process.env.REDIS_URL,
-            },
+            resolve: "@medusajs/locking-in-memory",
+            id: "in-memory",
           },
         ],
       },
     },
-    // Workflow engine backed by Redis
+    // In-memory workflow engine
     {
-      resolve: "@medusajs/workflow-engine-redis",
+      resolve: "@medusajs/workflow-engine-inmemory",
       key: Modules.WORKFLOW_ENGINE,
-      options: {
-        redis: {
-          url: process.env.REDIS_URL,
-        },
-      },
     },
+    // ZERO Redis cache - Ultra performance with in-memory
     {
-      resolve: "@medusajs/cache-redis",
+      resolve: "@medusajs/cache-inmemory",
       key: Modules.CACHE,
       options: {
-        redisUrl: process.env.REDIS_URL,
+        ttl: 3600, // 1 hour
+        max: 200,  // 200 items max (plus généreux qu'avec Redis)
       },
     },
     {
