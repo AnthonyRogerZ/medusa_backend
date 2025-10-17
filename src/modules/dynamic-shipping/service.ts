@@ -121,7 +121,9 @@ const SHIPPING_RATES: ShippingRates = {
   },
   "chronopost": {
     "fr": {
-      brackets: [{ minWeight: 0, maxWeight: 5, price: 799 }],
+      brackets: [
+        { minWeight: 0, maxWeight: 5, price: 799 }, // Chronopost Relais (48h) - max 5kg
+      ],
     },
   },
 }
@@ -228,11 +230,10 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
       )
 
       if (!bracket) {
-        console.error(`❌ Poids ${totalWeight}kg hors limites pour ${carrier}`)
-        return {
-          calculated_amount: 9999.99, // Prix très élevé pour indiquer que c'est impossible
-          is_calculated_price_tax_inclusive: false,
-        }
+        console.error(`❌ Poids ${totalWeight}kg hors limites pour ${carrier} (max: 10kg)`)
+        console.log(`⚠️ Commande trop lourde, ce transporteur ne sera pas disponible`)
+        // Retourner null pour que cette option n'apparaisse pas du tout
+        throw new Error(`Poids ${totalWeight}kg trop élevé pour ${carrier} (max: 10kg)`)
       }
 
       let finalPrice = bracket.price
@@ -240,6 +241,7 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
       // 7. Vérifier la livraison gratuite (Mondial Relay France uniquement)
       if (countryRates.freeShippingThreshold) {
         const cartTotal = (context.cart as any)?.total || 0
+        console.log(`💰 Total panier: ${cartTotal} centimes (${cartTotal/100}€), Seuil: ${countryRates.freeShippingThreshold} centimes`)
         if (cartTotal >= countryRates.freeShippingThreshold) {
           finalPrice = 0
           console.log(`🎁 Livraison gratuite! (total: ${cartTotal/100}€)`)
