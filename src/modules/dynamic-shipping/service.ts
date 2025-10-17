@@ -188,15 +188,17 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
       const countryCode = (context.shipping_address?.country_code || "fr").toLowerCase()
       console.log(`🌍 Pays: ${countryCode}`)
 
-      // 4. Déterminer le transporteur depuis le nom de l'option
-      const optionName = String(optionData.name || "").toLowerCase()
-      console.log(`📝 Option name: "${optionName}"`)
+      // 4. Déterminer le transporteur depuis l'ID de l'option
+      const optionId = String(optionData.id || "").toLowerCase()
+      console.log(`📝 Option ID: "${optionId}"`)
       let carrier = "mondial-relay"
       
-      if (optionName.includes("colissimo")) {
+      if (optionId.includes("colissimo")) {
         carrier = "colissimo"
-      } else if (optionName.includes("chronopost")) {
+      } else if (optionId.includes("chronopost")) {
         carrier = "chronopost"
+      } else if (optionId.includes("mondial")) {
+        carrier = "mondial-relay"
       }
 
       console.log(`🚛 Transporteur détecté: ${carrier}`)
@@ -206,7 +208,7 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
       if (!carrierRates) {
         console.error(`❌ Pas de tarifs pour ${carrier}`)
         return {
-          calculated_amount: 999,
+          calculated_amount: 9.99,
           is_calculated_price_tax_inclusive: false,
         }
       }
@@ -215,7 +217,7 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
       if (!countryRates) {
         console.error(`❌ Pas de tarifs pour ${carrier} vers ${countryCode}`)
         return {
-          calculated_amount: 999,
+          calculated_amount: 9.99,
           is_calculated_price_tax_inclusive: false,
         }
       }
@@ -228,7 +230,7 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
       if (!bracket) {
         console.error(`❌ Poids ${totalWeight}kg hors limites pour ${carrier}`)
         return {
-          calculated_amount: 999999, // Prix très élevé pour indiquer que c'est impossible
+          calculated_amount: 9999.99, // Prix très élevé pour indiquer que c'est impossible
           is_calculated_price_tax_inclusive: false,
         }
       }
@@ -244,17 +246,19 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
         }
       }
 
-      console.log(`💰 Prix calculé: ${finalPrice/100}€`)
+      // Convertir en euros avec décimales (au lieu de centimes)
+      const priceInEuros = finalPrice / 100
+      console.log(`💰 Prix calculé: ${priceInEuros}€`)
 
       return {
-        calculated_amount: finalPrice,
+        calculated_amount: priceInEuros,
         is_calculated_price_tax_inclusive: false,
       }
 
     } catch (error) {
       console.error("❌ Erreur dans calculatePrice:", error)
       return {
-        calculated_amount: 999,
+        calculated_amount: 9.99,
         is_calculated_price_tax_inclusive: false,
       }
     }
