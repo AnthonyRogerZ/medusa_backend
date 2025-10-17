@@ -174,10 +174,12 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
       console.log(`📦 Nombre d'items: ${items.length}`)
       
       // 2. Calculer le poids total (en kg)
+      // Note: Medusa stocke le poids en GRAMMES dans la DB
       const totalWeight = items.reduce((sum: number, item: any) => {
-        const weight = item.variant?.weight || 0.5 // 500g par défaut
-        console.log(`  - Item: ${item.title || 'Unknown'}, weight: ${weight}kg, qty: ${item.quantity}`)
-        return sum + (weight * Number(item.quantity))
+        const weightInGrams = item.variant?.weight || 100 // 100g par défaut
+        const weightInKg = weightInGrams / 1000 // Conversion grammes → kg
+        console.log(`  - Item: ${item.title || 'Unknown'}, weight: ${weightInGrams}g (${weightInKg}kg), qty: ${item.quantity}`)
+        return sum + (weightInKg * Number(item.quantity))
       }, 0)
 
       console.log(`⚖️ Poids total: ${totalWeight}kg`)
