@@ -124,5 +124,18 @@ module.exports = defineConfig({
         ],
       },
     },
+    // Dynamic shipping provider basé sur le poids
+    {
+      resolve: "@medusajs/medusa/fulfillment",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/dynamic-shipping",
+            id: "dynamic-shipping",
+            options: {},
+          },
+        ],
+      },
+    },
   ],
 })
