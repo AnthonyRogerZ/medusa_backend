@@ -14,10 +14,10 @@ type ShippingRates = {
   };
 }
 
-// GRILLE TARIFAIRE COMPLÈTE
+// GRILLE TARIFAIRE COMPLÈTE (codes pays en minuscules)
 const SHIPPING_RATES: ShippingRates = {
   "mondial-relay": {
-    "FR": {
+    "fr": {
       freeShippingThreshold: 4000, // 40€ en centimes
       brackets: [
         { minWeight: 0, maxWeight: 2, price: 599 },
@@ -25,89 +25,89 @@ const SHIPPING_RATES: ShippingRates = {
         { minWeight: 5, maxWeight: 10, price: 1099 },
       ],
     },
-    "BE": { brackets: [{ minWeight: 0, maxWeight: 5, price: 699 }] },
-    "LU": { brackets: [{ minWeight: 0, maxWeight: 5, price: 699 }] },
-    "NL": { brackets: [{ minWeight: 0, maxWeight: 5, price: 699 }] },
-    "ES": { brackets: [{ minWeight: 0, maxWeight: 5, price: 830 }] },
-    "PT": { brackets: [{ minWeight: 0, maxWeight: 5, price: 830 }] },
-    "IT": { brackets: [{ minWeight: 0, maxWeight: 5, price: 930 }] },
-    "PL": { brackets: [{ minWeight: 0, maxWeight: 5, price: 930 }] },
+    "be": { brackets: [{ minWeight: 0, maxWeight: 5, price: 699 }] },
+    "lu": { brackets: [{ minWeight: 0, maxWeight: 5, price: 699 }] },
+    "nl": { brackets: [{ minWeight: 0, maxWeight: 5, price: 699 }] },
+    "es": { brackets: [{ minWeight: 0, maxWeight: 5, price: 830 }] },
+    "pt": { brackets: [{ minWeight: 0, maxWeight: 5, price: 830 }] },
+    "it": { brackets: [{ minWeight: 0, maxWeight: 5, price: 930 }] },
+    "pl": { brackets: [{ minWeight: 0, maxWeight: 5, price: 930 }] },
   },
   "colissimo": {
-    "FR": {
+    "fr": {
       brackets: [
         { minWeight: 0, maxWeight: 2, price: 870 },
         { minWeight: 2, maxWeight: 5, price: 1290 },
         { minWeight: 5, maxWeight: 10, price: 1690 },
       ],
     },
-    "GP": { brackets: [
+    "gp": { brackets: [
       { minWeight: 0, maxWeight: 1, price: 1235 },
       { minWeight: 1, maxWeight: 3, price: 1890 },
       { minWeight: 3, maxWeight: 5, price: 2890 },
       { minWeight: 5, maxWeight: 10, price: 3990 },
     ]},
-    "MQ": { brackets: [
+    "mq": { brackets: [
       { minWeight: 0, maxWeight: 1, price: 1235 },
       { minWeight: 1, maxWeight: 3, price: 1890 },
       { minWeight: 3, maxWeight: 5, price: 2890 },
       { minWeight: 5, maxWeight: 10, price: 3990 },
     ]},
-    "GF": { brackets: [
+    "gf": { brackets: [
       { minWeight: 0, maxWeight: 1, price: 1235 },
       { minWeight: 1, maxWeight: 3, price: 1890 },
       { minWeight: 3, maxWeight: 5, price: 2890 },
       { minWeight: 5, maxWeight: 10, price: 3990 },
     ]},
-    "RE": { brackets: [
+    "re": { brackets: [
       { minWeight: 0, maxWeight: 1, price: 1235 },
       { minWeight: 1, maxWeight: 3, price: 1890 },
       { minWeight: 3, maxWeight: 5, price: 2890 },
       { minWeight: 5, maxWeight: 10, price: 3990 },
     ]},
-    "YT": { brackets: [
+    "yt": { brackets: [
       { minWeight: 0, maxWeight: 1, price: 1235 },
       { minWeight: 1, maxWeight: 3, price: 1890 },
       { minWeight: 3, maxWeight: 5, price: 2890 },
       { minWeight: 5, maxWeight: 10, price: 3990 },
     ]},
     // Europe
-    "BE": { brackets: [
+    "be": { brackets: [
       { minWeight: 0, maxWeight: 2, price: 1845 },
       { minWeight: 2, maxWeight: 5, price: 2590 },
       { minWeight: 5, maxWeight: 10, price: 3290 },
     ]},
-    "LU": { brackets: [
+    "lu": { brackets: [
       { minWeight: 0, maxWeight: 2, price: 1845 },
       { minWeight: 2, maxWeight: 5, price: 2590 },
       { minWeight: 5, maxWeight: 10, price: 3290 },
     ]},
-    "NL": { brackets: [
+    "nl": { brackets: [
       { minWeight: 0, maxWeight: 2, price: 1845 },
       { minWeight: 2, maxWeight: 5, price: 2590 },
       { minWeight: 5, maxWeight: 10, price: 3290 },
     ]},
-    "ES": { brackets: [
+    "es": { brackets: [
       { minWeight: 0, maxWeight: 2, price: 1845 },
       { minWeight: 2, maxWeight: 5, price: 2590 },
       { minWeight: 5, maxWeight: 10, price: 3290 },
     ]},
-    "PT": { brackets: [
+    "pt": { brackets: [
       { minWeight: 0, maxWeight: 2, price: 1845 },
       { minWeight: 2, maxWeight: 5, price: 2590 },
       { minWeight: 5, maxWeight: 10, price: 3290 },
     ]},
-    "IT": { brackets: [
+    "it": { brackets: [
       { minWeight: 0, maxWeight: 2, price: 1845 },
       { minWeight: 2, maxWeight: 5, price: 2590 },
       { minWeight: 5, maxWeight: 10, price: 3290 },
     ]},
-    "PL": { brackets: [
+    "pl": { brackets: [
       { minWeight: 0, maxWeight: 2, price: 1845 },
       { minWeight: 2, maxWeight: 5, price: 2590 },
       { minWeight: 5, maxWeight: 10, price: 3290 },
     ]},
-    "DE": { brackets: [
+    "de": { brackets: [
       { minWeight: 0, maxWeight: 2, price: 1845 },
       { minWeight: 2, maxWeight: 5, price: 2590 },
       { minWeight: 5, maxWeight: 10, price: 3290 },
@@ -120,7 +120,7 @@ const SHIPPING_RATES: ShippingRates = {
     ]},
   },
   "chronopost": {
-    "FR": {
+    "fr": {
       brackets: [{ minWeight: 0, maxWeight: 5, price: 799 }],
     },
   },
@@ -165,25 +165,30 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
   ): Promise<CalculatedShippingOptionPrice> {
     try {
       console.log("🚚 [Dynamic Shipping] calculatePrice called")
-      console.log("📦 Context:", JSON.stringify(context, null, 2))
+      console.log("📦 optionData:", JSON.stringify(optionData, null, 2))
+      console.log("📦 data:", JSON.stringify(data, null, 2))
+      console.log("📦 context:", JSON.stringify(context, null, 2))
 
       // 1. Récupérer les items du cart
       const items = context.items || []
+      console.log(`📦 Nombre d'items: ${items.length}`)
       
       // 2. Calculer le poids total (en kg)
       const totalWeight = items.reduce((sum: number, item: any) => {
         const weight = item.variant?.weight || 0.5 // 500g par défaut
+        console.log(`  - Item: ${item.title || 'Unknown'}, weight: ${weight}kg, qty: ${item.quantity}`)
         return sum + (weight * Number(item.quantity))
       }, 0)
 
       console.log(`⚖️ Poids total: ${totalWeight}kg`)
 
-      // 3. Récupérer le pays de livraison
-      const countryCode = context.shipping_address?.country_code || "FR"
+      // 3. Récupérer le pays de livraison (en minuscules)
+      const countryCode = (context.shipping_address?.country_code || "fr").toLowerCase()
       console.log(`🌍 Pays: ${countryCode}`)
 
       // 4. Déterminer le transporteur depuis le nom de l'option
       const optionName = String(optionData.name || "").toLowerCase()
+      console.log(`📝 Option name: "${optionName}"`)
       let carrier = "mondial-relay"
       
       if (optionName.includes("colissimo")) {
@@ -192,7 +197,7 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
         carrier = "chronopost"
       }
 
-      console.log(`🚛 Transporteur: ${carrier}`)
+      console.log(`🚛 Transporteur détecté: ${carrier}`)
 
       // 5. Récupérer les tarifs pour ce transporteur et ce pays
       const carrierRates = SHIPPING_RATES[carrier]
