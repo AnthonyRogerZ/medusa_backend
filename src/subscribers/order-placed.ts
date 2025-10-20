@@ -36,6 +36,8 @@ export default async function handleOrderEmails({ event, container }: Subscriber
         "subtotal",
         "shipping_total",
         "tax_total",
+        "cart_id",
+        "metadata",
         "items.id",
         "items.title",
         "items.quantity",
@@ -48,6 +50,34 @@ export default async function handleOrderEmails({ event, container }: Subscriber
     if (!order) {
       logger.warn(`Order not found for id ${orderId}`)
       return
+    }
+
+    // Copier les métadonnées du cart vers l'order
+    if (order.cart_id) {
+      try {
+        const cartResult = await remoteQuery({
+          entryPoint: "cart",
+          fields: ["id", "metadata"],
+          variables: { id: order.cart_id },
+        })
+        const cart = Array.isArray(cartResult) ? cartResult[0] : cartResult
+        
+        if (cart?.metadata && Object.keys(cart.metadata).length > 0) {
+          const orderModuleService = container.resolve("orderModuleService") as any
+          await orderModuleService.updateOrders(orderId, {
+            metadata: {
+              ...order.metadata,
+              ...cart.metadata,
+            },
+          })
+          logger.info(`✅ [METADATA] Métadonnées copiées du cart vers l'order ${orderId}`)
+          if (cart.metadata.order_notes) {
+            logger.info(`📝 [METADATA] order_notes: ${cart.metadata.order_notes}`)
+          }
+        }
+      } catch (metaError: any) {
+        logger.error(`❌ [METADATA] Erreur copie métadonnées pour order ${orderId}: ${metaError?.message || metaError}`)
+      }
     }
 
     const to = order.email as string | undefined
