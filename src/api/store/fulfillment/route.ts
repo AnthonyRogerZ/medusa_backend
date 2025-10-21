@@ -1,19 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
-// Handle CORS preflight
-export const OPTIONS = async (req: MedusaRequest, res: MedusaResponse) => {
-  res.setHeader("Access-Control-Allow-Origin", "https://gomgom-bonbons.vercel.app")
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  return res.status(200).end()
-}
-
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
-  // Add CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "https://gomgom-bonbons.vercel.app")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
   const body = req.body as { orderId?: string; trackingNumber?: string }
   const { orderId, trackingNumber } = body
 
