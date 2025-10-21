@@ -44,9 +44,6 @@ export default async function handleOrderEmails({ event, container }: Subscriber
         "items.*",
         "shipping_address.*",
         "shipping_methods.*",
-        "shipping_methods.shipping_option.id",
-        "shipping_methods.shipping_option.name",
-        "shipping_methods.shipping_option.data",
       ],
       variables: { id: orderId },
     })
@@ -70,10 +67,9 @@ export default async function handleOrderEmails({ event, container }: Subscriber
       try {
         const shippingAddr = order.shipping_address
         const shippingMethod = order.shipping_methods?.[0]
-        const shippingOption = shippingMethod?.shipping_option
         
-        // Debug: vérifier shipping_methods
-        logger.info(`[DEBUG] shipping_methods: ${JSON.stringify(order.shipping_methods)}`)
+        // Debug: voir ce qui est disponible
+        logger.info(`[DEBUG] shippingMethod structure: ${JSON.stringify(shippingMethod)}`)
         
         await sendOrderNotificationToSlack({
           orderId: order.id,
@@ -98,13 +94,10 @@ export default async function handleOrderEmails({ event, container }: Subscriber
             countryCode: shippingAddr.country_code,
             phone: shippingAddr.phone,
           } : undefined,
-          shippingMethod: (shippingMethod && shippingOption) ? {
-            name: shippingOption.name || 'Non spécifié',
+          shippingMethod: shippingMethod ? {
+            name: shippingMethod.name || 'Livraison',
             amount: shippingMethod.amount || 0,
-          } : (shippingMethod ? {
-            name: 'Livraison standard',
-            amount: shippingMethod.amount || 0,
-          } : undefined),
+          } : undefined,
           orderNotes: order.metadata?.order_notes,
           orderUrl: `https://gomgom-bonbons.vercel.app/fr/print-label/${order.id}`,
         })
