@@ -49,6 +49,9 @@ export default async function handleOrderEmails({ event, container }: Subscriber
         "shipping_address.province",
         "shipping_address.country_code",
         "shipping_address.phone",
+        "shipping_methods.*",
+        "shipping_methods.shipping_option.*",
+        "shipping_methods.shipping_option.name",
       ],
       variables: { id: orderId },
     })
@@ -69,6 +72,9 @@ export default async function handleOrderEmails({ event, container }: Subscriber
     if (event.name === OrderWorkflowEvents.PLACED) {
       try {
         const shippingAddr = order.shipping_address
+        const shippingMethod = order.shipping_methods?.[0]
+        const shippingOption = shippingMethod?.shipping_option
+        
         await sendOrderNotificationToSlack({
           orderId: order.id,
           displayId: order.display_id || order.id,
@@ -91,6 +97,10 @@ export default async function handleOrderEmails({ event, container }: Subscriber
             province: shippingAddr.province,
             countryCode: shippingAddr.country_code,
             phone: shippingAddr.phone,
+          } : undefined,
+          shippingMethod: shippingOption ? {
+            name: shippingOption.name || 'Non spécifié',
+            amount: shippingMethod.amount || 0,
           } : undefined,
           orderNotes: order.metadata?.order_notes,
           orderUrl: `https://gomgom-bonbons.vercel.app/fr/print-label/${order.id}`,

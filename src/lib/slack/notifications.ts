@@ -25,6 +25,10 @@ interface OrderNotificationData {
     countryCode?: string
     phone?: string
   }
+  shippingMethod?: {
+    name: string
+    amount: number
+  }
   orderNotes?: string
   orderUrl?: string
 }
@@ -53,9 +57,19 @@ function buildSlackMessage(data: OrderNotificationData) {
     currencyCode,
     items,
     shippingAddress,
+    shippingMethod,
     orderNotes,
     orderUrl,
   } = data
+
+  // Détecter l'icône du transporteur
+  const getShippingIcon = (methodName: string): string => {
+    const name = methodName.toLowerCase()
+    if (name.includes('mondial') || name.includes('relay')) return '📮'
+    if (name.includes('chronopost')) return '⚡'
+    if (name.includes('colissimo')) return '📦'
+    return '🚚'
+  }
 
   // Adresse formatée
   const addressLines: string[] = []
@@ -102,6 +116,15 @@ function buildSlackMessage(data: OrderNotificationData) {
           },
         ],
       },
+      ...(shippingMethod ? [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `*${getShippingIcon(shippingMethod.name)} Mode de livraison:*\n${shippingMethod.name} (${formatAmount(shippingMethod.amount, currencyCode)})`,
+          },
+        },
+      ] : []),
       {
         type: 'divider',
       },
