@@ -26,6 +26,8 @@ export default async function handleOrderEmails({ event, container }: Subscriber
   }
 
   try {
+    logger.info(`[ORDER-PLACED] Processing order ${orderId} for event ${event.name}`)
+    
     const result = await remoteQuery({
       entryPoint: "order",
       fields: [
@@ -40,18 +42,11 @@ export default async function handleOrderEmails({ event, container }: Subscriber
         "cart_id",
         "metadata",
         "items.*",
-        "shipping_address.first_name",
-        "shipping_address.last_name",
-        "shipping_address.address_1",
-        "shipping_address.address_2",
-        "shipping_address.city",
-        "shipping_address.postal_code",
-        "shipping_address.province",
-        "shipping_address.country_code",
-        "shipping_address.phone",
+        "shipping_address.*",
         "shipping_methods.*",
-        "shipping_methods.shipping_option.*",
+        "shipping_methods.shipping_option.id",
         "shipping_methods.shipping_option.name",
+        "shipping_methods.shipping_option.data",
       ],
       variables: { id: orderId },
     })
@@ -61,6 +56,8 @@ export default async function handleOrderEmails({ event, container }: Subscriber
       logger.warn(`Order not found for id ${orderId}`)
       return
     }
+    
+    logger.info(`[ORDER-PLACED] Order retrieved successfully: ${order.display_id || order.id}`)
 
     // Note: Medusa v2 copie automatiquement cart.metadata → order.metadata lors de cart.complete()
     // Aucune action manuelle n'est nécessaire, les order_notes sont déjà dans order.metadata
@@ -74,6 +71,9 @@ export default async function handleOrderEmails({ event, container }: Subscriber
         const shippingAddr = order.shipping_address
         const shippingMethod = order.shipping_methods?.[0]
         const shippingOption = shippingMethod?.shipping_option
+        
+        // Debug: vérifier shipping_methods
+        logger.info(`[DEBUG] shipping_methods: ${JSON.stringify(order.shipping_methods)}`)
         
         await sendOrderNotificationToSlack({
           orderId: order.id,
@@ -98,10 +98,13 @@ export default async function handleOrderEmails({ event, container }: Subscriber
             countryCode: shippingAddr.country_code,
             phone: shippingAddr.phone,
           } : undefined,
-          shippingMethod: shippingOption ? {
+          shippingMethod: (shippingMethod && shippingOption) ? {
             name: shippingOption.name || 'Non spécifié',
             amount: shippingMethod.amount || 0,
-          } : undefined,
+          } : (shippingMethod ? {
+            name: 'Livraison standard',
+            amount: shippingMethod.amount || 0,
+          } : undefined),
           orderNotes: order.metadata?.order_notes,
           orderUrl: `https://gomgom-bonbons.vercel.app/fr/print-label/${order.id}`,
         })
@@ -111,36 +114,40 @@ export default async function handleOrderEmails({ event, container }: Subscriber
       }
     }
 
-    const to = order.email as string | undefined
-    if (!to || !to.includes("@")) {
-      logger.warn(`Order ${orderId} has no email; skipping notification.`)
-      return
-    }
+    // Envoi d'email de confirmation
+    try {
+      const to = order.email as string | undefined
+      if (!to || !to.includes("@")) {
+        logger.warn(`Order ${orderId} has no email; skipping email notification.`)
+        return
+      }
 
-    const orderUrl = `https://gomgom-bonbons.vercel.app/fr/account/orders`
-    const subject = event.name === OrderWorkflowEvents.COMPLETED ?
-      `Votre commande #${order.display_id || order.id} est terminée` :
-      `Confirmation de commande #${order.display_id || order.id}`
+      logger.info(`[ORDER-PLACED] Preparing email for ${to}`)
 
-    const format = (amount?: number, currency?: string) => {
-      // Medusa v2 stocke les montants déjà en euros (pas en centimes)
-      try { return new Intl.NumberFormat("fr-FR", { style: "currency", currency: (currency || "EUR").toUpperCase() }).format(amount || 0); } catch { return `${amount || 0} ${currency || "EUR"}` }
-    }
+      const orderUrl = `https://gomgom-bonbons.vercel.app/fr/account/orders`
+      const subject = event.name === OrderWorkflowEvents.COMPLETED ?
+        `Votre commande #${order.display_id || order.id} est terminée` :
+        `Confirmation de commande #${order.display_id || order.id}`
 
-    const lines = (order.items || []).map((it: any) => 
-      `<tr style="border-bottom: 1px solid #eee;">
-        <td style="padding: 15px 10px;">
-          <div style="font-weight: 500; color: #000;">${it.title}</div>
-          <div style="font-size: 13px; color: #666;">Quantité: ${it.quantity}</div>
-        </td>
-        <td style="padding: 15px 10px; text-align: right; font-weight: 500; color: #000;">
-          ${format(it.total, order.currency_code)}
-        </td>
-      </tr>`
-    ).join("")
+      const format = (amount?: number, currency?: string) => {
+        // Medusa v2 stocke les montants déjà en euros (pas en centimes)
+        try { return new Intl.NumberFormat("fr-FR", { style: "currency", currency: (currency || "EUR").toUpperCase() }).format(amount || 0); } catch { return `${amount || 0} ${currency || "EUR"}` }
+      }
 
-    const shippingAddr = order.shipping_address
-    const addressHtml = shippingAddr ? `
+      const lines = (order.items || []).map((it: any) => 
+        `<tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 15px 10px;">
+            <div style="font-weight: 500; color: #000;">${it.title}</div>
+            <div style="font-size: 13px; color: #666;">Quantité: ${it.quantity}</div>
+          </td>
+          <td style="padding: 15px 10px; text-align: right; font-weight: 500; color: #000;">
+            ${format(it.total, order.currency_code)}
+          </td>
+        </tr>`
+      ).join("")
+
+      const shippingAddr = order.shipping_address
+      const addressHtml = shippingAddr ? `
       <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
         <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #000;">📍 Adresse de livraison</h3>
         <p style="margin: 5px 0; color: #333; line-height: 1.6;">
@@ -152,9 +159,9 @@ export default async function handleOrderEmails({ event, container }: Subscriber
           ${shippingAddr.phone ? `📞 ${shippingAddr.phone}` : ''}
         </p>
       </div>
-    ` : ''
+      ` : ''
 
-    const orderNotesHtml = order.metadata?.order_notes ? `
+      const orderNotesHtml = order.metadata?.order_notes ? `
       <div style="background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; padding: 15px; margin: 25px 0;">
         <p style="margin: 0 0 8px 0; font-weight: bold; color: #856404; font-size: 14px;">
           📝 Instructions spéciales
@@ -163,9 +170,9 @@ export default async function handleOrderEmails({ event, container }: Subscriber
           ${String(order.metadata.order_notes).replace(/\n/g, '<br>')}
         </p>
       </div>
-    ` : ''
+      ` : ''
 
-    const html = `
+      const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #FFB6C1 0%, #98D8C8 100%); padding: 30px 20px; text-align: center;">
@@ -246,9 +253,9 @@ export default async function handleOrderEmails({ event, container }: Subscriber
           </p>
         </div>
       </div>
-    `
+      `
 
-    const text = `
+      const text = `
 Commande Confirmée !
 
 Bonjour ${shippingAddr?.first_name || 'cher client'},
@@ -275,11 +282,16 @@ Suivre ma commande: ${orderUrl}
 
 Merci pour votre confiance !
 L'équipe GomGom Bonbons
-    `.trim()
+      `.trim()
 
-    await sendMailjetEmail({ to, subject, html, text })
-    logger.info(`Order email (${event.name}) sent to ${to} for order ${orderId}`)
+      await sendMailjetEmail({ to, subject, html, text })
+      logger.info(`[ORDER-PLACED] Email sent successfully to ${to}`)
+    } catch (emailError: any) {
+      logger.error(`[ORDER-PLACED] Failed sending email for ${orderId}: ${emailError?.message || emailError}`)
+      logger.error(`[ORDER-PLACED] Email error stack: ${emailError?.stack}`)
+    }
   } catch (e: any) {
-    logger.error(`Failed sending order email for ${orderId}: ${e?.message || e}`)
+    logger.error(`[ORDER-PLACED] Failed processing order ${orderId}: ${e?.message || e}`)
+    logger.error(`[ORDER-PLACED] Error stack: ${e?.stack}`)
   }
 }
