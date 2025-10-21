@@ -31,12 +31,13 @@ interface OrderNotificationData {
 
 /**
  * Formate le montant en euros
+ * Medusa v2 stocke les montants déjà en euros (pas en centimes)
  */
 function formatAmount(amount: number, currencyCode: string): string {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: currencyCode.toUpperCase(),
-  }).format(amount / 100)
+  }).format(amount)
 }
 
 /**

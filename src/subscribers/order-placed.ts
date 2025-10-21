@@ -39,10 +39,7 @@ export default async function handleOrderEmails({ event, container }: Subscriber
         "tax_total",
         "cart_id",
         "metadata",
-        "items.id",
-        "items.title",
-        "items.quantity",
-        "items.total",
+        "items.*",
         "shipping_address.first_name",
         "shipping_address.last_name",
         "shipping_address.address_1",
@@ -65,6 +62,9 @@ export default async function handleOrderEmails({ event, container }: Subscriber
     // Note: Medusa v2 copie automatiquement cart.metadata → order.metadata lors de cart.complete()
     // Aucune action manuelle n'est nécessaire, les order_notes sont déjà dans order.metadata
 
+    // Debug: vérifier les items
+    logger.info(`[DEBUG] Order items: ${JSON.stringify(order.items)}`)
+    
     // Envoyer notification Slack pour les nouvelles commandes
     if (event.name === OrderWorkflowEvents.PLACED) {
       try {
@@ -113,7 +113,8 @@ export default async function handleOrderEmails({ event, container }: Subscriber
       `Confirmation de commande #${order.display_id || order.id}`
 
     const format = (amount?: number, currency?: string) => {
-      try { return new Intl.NumberFormat("fr-FR", { style: "currency", currency: (currency || "EUR").toUpperCase() }).format(((amount || 0) / 100)); } catch { return `${(amount || 0) / 100} ${currency || "EUR"}` }
+      // Medusa v2 stocke les montants déjà en euros (pas en centimes)
+      try { return new Intl.NumberFormat("fr-FR", { style: "currency", currency: (currency || "EUR").toUpperCase() }).format(amount || 0); } catch { return `${amount || 0} ${currency || "EUR"}` }
     }
 
     const lines = (order.items || []).map((it: any) => `<tr><td>${it.title}</td><td style="text-align:right">x${it.quantity}</td><td style="text-align:right">${format(it.total, order.currency_code)}</td></tr>`).join("")
@@ -130,7 +131,6 @@ export default async function handleOrderEmails({ event, container }: Subscriber
             ${lines}
             <tr><td colspan="2" align="right"><strong>Sous-total</strong></td><td align="right">${format(order.subtotal, order.currency_code)}</td></tr>
             <tr><td colspan="2" align="right"><strong>Livraison</strong></td><td align="right">${format(order.shipping_total, order.currency_code)}</td></tr>
-            <tr><td colspan="2" align="right"><strong>Taxes</strong></td><td align="right">${format(order.tax_total, order.currency_code)}</td></tr>
             <tr><td colspan="2" align="right"><strong>Total</strong></td><td align="right"><strong>${format(order.total, order.currency_code)}</strong></td></tr>
           </tbody>
         </table>
