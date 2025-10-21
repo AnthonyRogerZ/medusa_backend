@@ -1,6 +1,7 @@
 import type { SubscriberArgs } from "@medusajs/framework"
 import { OrderWorkflowEvents } from "@medusajs/utils"
 import { sendMailjetEmail } from "../lib/email/mailjet"
+import { sendOrderNotificationToSlack } from "../lib/slack/notifications"
 
 export const config = {
   event: [OrderWorkflowEvents.PLACED, OrderWorkflowEvents.COMPLETED],
@@ -42,6 +43,15 @@ export default async function handleOrderEmails({ event, container }: Subscriber
         "items.title",
         "items.quantity",
         "items.total",
+        "shipping_address.first_name",
+        "shipping_address.last_name",
+        "shipping_address.address_1",
+        "shipping_address.address_2",
+        "shipping_address.city",
+        "shipping_address.postal_code",
+        "shipping_address.province",
+        "shipping_address.country_code",
+        "shipping_address.phone",
       ],
       variables: { id: orderId },
     })
@@ -54,6 +64,42 @@ export default async function handleOrderEmails({ event, container }: Subscriber
 
     // Note: Medusa v2 copie automatiquement cart.metadata → order.metadata lors de cart.complete()
     // Aucune action manuelle n'est nécessaire, les order_notes sont déjà dans order.metadata
+
+    // Envoyer notification Slack pour les nouvelles commandes
+    if (event.name === OrderWorkflowEvents.PLACED) {
+      try {
+        const shippingAddr = order.shipping_address
+        await sendOrderNotificationToSlack({
+          orderId: order.id,
+          displayId: order.display_id || order.id,
+          customerEmail: order.email,
+          customerName: shippingAddr ? `${shippingAddr.first_name || ''} ${shippingAddr.last_name || ''}`.trim() : undefined,
+          total: order.total,
+          currencyCode: order.currency_code,
+          items: (order.items || []).map((item: any) => ({
+            title: item.title,
+            quantity: item.quantity,
+            total: item.total,
+          })),
+          shippingAddress: shippingAddr ? {
+            firstName: shippingAddr.first_name,
+            lastName: shippingAddr.last_name,
+            address1: shippingAddr.address_1,
+            address2: shippingAddr.address_2,
+            city: shippingAddr.city,
+            postalCode: shippingAddr.postal_code,
+            province: shippingAddr.province,
+            countryCode: shippingAddr.country_code,
+            phone: shippingAddr.phone,
+          } : undefined,
+          orderNotes: order.metadata?.order_notes,
+          orderUrl: `${frontendUrl.replace(/\/?$/, "")}/orders/${order.display_id || order.id}`,
+        })
+      } catch (slackError: any) {
+        logger.error(`Erreur notification Slack: ${slackError?.message || slackError}`)
+        // Ne pas bloquer l'envoi d'email si Slack échoue
+      }
+    }
 
     const to = order.email as string | undefined
     if (!to || !to.includes("@")) {
