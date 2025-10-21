@@ -117,28 +117,155 @@ export default async function handleOrderEmails({ event, container }: Subscriber
       try { return new Intl.NumberFormat("fr-FR", { style: "currency", currency: (currency || "EUR").toUpperCase() }).format(amount || 0); } catch { return `${amount || 0} ${currency || "EUR"}` }
     }
 
-    const lines = (order.items || []).map((it: any) => `<tr><td>${it.title}</td><td style="text-align:right">x${it.quantity}</td><td style="text-align:right">${format(it.total, order.currency_code)}</td></tr>`).join("")
+    const lines = (order.items || []).map((it: any) => 
+      `<tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 15px 10px;">
+          <div style="font-weight: 500; color: #000;">${it.title}</div>
+          <div style="font-size: 13px; color: #666;">Quantité: ${it.quantity}</div>
+        </td>
+        <td style="padding: 15px 10px; text-align: right; font-weight: 500; color: #000;">
+          ${format(it.total, order.currency_code)}
+        </td>
+      </tr>`
+    ).join("")
+
+    const shippingAddr = order.shipping_address
+    const addressHtml = shippingAddr ? `
+      <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
+        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #000;">📍 Adresse de livraison</h3>
+        <p style="margin: 5px 0; color: #333; line-height: 1.6;">
+          <strong>${shippingAddr.first_name} ${shippingAddr.last_name}</strong><br>
+          ${shippingAddr.address_1}<br>
+          ${shippingAddr.address_2 ? `${shippingAddr.address_2}<br>` : ''}
+          ${shippingAddr.postal_code} ${shippingAddr.city}<br>
+          ${shippingAddr.province ? `${shippingAddr.province}<br>` : ''}
+          ${shippingAddr.phone ? `📞 ${shippingAddr.phone}` : ''}
+        </p>
+      </div>
+    ` : ''
+
+    const orderNotesHtml = order.metadata?.order_notes ? `
+      <div style="background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; padding: 15px; margin: 25px 0;">
+        <p style="margin: 0 0 8px 0; font-weight: bold; color: #856404; font-size: 14px;">
+          📝 Instructions spéciales
+        </p>
+        <p style="margin: 0; color: #856404; line-height: 1.6;">
+          ${String(order.metadata.order_notes).replace(/\n/g, '<br>')}
+        </p>
+      </div>
+    ` : ''
 
     const html = `
-      <div>
-        <p>Merci pour votre commande !</p>
-        <p>Numéro de commande: <strong>#${order.display_id || order.id}</strong></p>
-        <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse">
-          <thead>
-            <tr><th align="left">Article</th><th align="right">Qté</th><th align="right">Total</th></tr>
-          </thead>
-          <tbody>
-            ${lines}
-            <tr><td colspan="2" align="right"><strong>Sous-total</strong></td><td align="right">${format(order.subtotal, order.currency_code)}</td></tr>
-            <tr><td colspan="2" align="right"><strong>Livraison</strong></td><td align="right">${format(order.shipping_total, order.currency_code)}</td></tr>
-            <tr><td colspan="2" align="right"><strong>Total</strong></td><td align="right"><strong>${format(order.total, order.currency_code)}</strong></td></tr>
-          </tbody>
-        </table>
-        <p>Suivre ma commande: <a href="${orderUrl}">${orderUrl}</a></p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #FFB6C1 0%, #98D8C8 100%); padding: 30px 20px; text-align: center;">
+          <h1 style="margin: 0; color: #000; font-size: 28px;">🎉 Commande Confirmée !</h1>
+          <p style="margin: 10px 0 0 0; color: #333; font-size: 16px;">
+            Merci pour votre confiance
+          </p>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 30px 20px;">
+          <p style="font-size: 16px; line-height: 1.6; color: #333;">
+            Bonjour <strong>${shippingAddr?.first_name || 'cher client'}</strong>,
+          </p>
+          
+          <p style="font-size: 16px; line-height: 1.6; color: #333;">
+            Nous avons bien reçu votre commande <strong>#${order.display_id || order.id}</strong> 
+            et nous la préparons avec soin ! 🍬
+          </p>
+
+          ${orderNotesHtml}
+
+          <!-- Order Items -->
+          <div style="margin: 30px 0;">
+            <h2 style="font-size: 18px; color: #000; margin: 0 0 20px 0; border-bottom: 2px solid #FFB6C1; padding-bottom: 10px;">
+              📦 Votre commande
+            </h2>
+            
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+              <tbody>
+                ${lines}
+              </tbody>
+              <tfoot>
+                <tr style="background: #f8f9fa;">
+                  <td style="padding: 15px 10px; text-align: right; color: #666;">Sous-total</td>
+                  <td style="padding: 15px 10px; text-align: right; color: #666;">${format(order.subtotal, order.currency_code)}</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                  <td style="padding: 15px 10px; text-align: right; color: #666;">Livraison</td>
+                  <td style="padding: 15px 10px; text-align: right; color: #666;">${format(order.shipping_total, order.currency_code)}</td>
+                </tr>
+                <tr style="background: #FFB6C1;">
+                  <td style="padding: 15px 10px; text-align: right; font-weight: bold; color: #000; font-size: 18px;">Total</td>
+                  <td style="padding: 15px 10px; text-align: right; font-weight: bold; color: #000; font-size: 18px;">${format(order.total, order.currency_code)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          ${addressHtml}
+          
+          <!-- CTA Button -->
+          <div style="text-align: center; margin: 35px 0;">
+            <a href="${orderUrl}" 
+               style="display: inline-block; background: #000; color: white; padding: 15px 40px; 
+                      text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              📱 Suivre ma commande
+            </a>
+          </div>
+          
+          <!-- Info Box -->
+          <div style="background: #e8f5e9; border-radius: 8px; padding: 20px; margin: 25px 0;">
+            <p style="margin: 0; color: #2e7d32; line-height: 1.6; font-size: 14px;">
+              <strong>✨ Prochaines étapes :</strong><br>
+              • Votre commande est en cours de préparation<br>
+              • Vous recevrez un email dès l'expédition avec votre numéro de suivi<br>
+              • Livraison estimée sous 2-4 jours ouvrés
+            </p>
+          </div>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+          
+          <!-- Footer -->
+          <p style="font-size: 14px; color: #999; text-align: center; line-height: 1.8;">
+            Des questions ? Répondez simplement à cet email<br>
+            <strong style="color: #FFB6C1;">Merci pour votre confiance !</strong><br>
+            L'équipe GomGom Bonbons 🍬
+          </p>
+        </div>
       </div>
     `
 
-    const text = `Merci pour votre commande !\nCommande #${order.display_id || order.id}\nTotal: ${format(order.total, order.currency_code)}\nSuivre ma commande: ${orderUrl}`
+    const text = `
+Commande Confirmée !
+
+Bonjour ${shippingAddr?.first_name || 'cher client'},
+
+Nous avons bien reçu votre commande #${order.display_id || order.id}.
+
+Articles:
+${(order.items || []).map((it: any) => `- ${it.title} x${it.quantity} - ${format(it.total, order.currency_code)}`).join('\n')}
+
+Sous-total: ${format(order.subtotal, order.currency_code)}
+Livraison: ${format(order.shipping_total, order.currency_code)}
+Total: ${format(order.total, order.currency_code)}
+
+${shippingAddr ? `
+Adresse de livraison:
+${shippingAddr.first_name} ${shippingAddr.last_name}
+${shippingAddr.address_1}
+${shippingAddr.postal_code} ${shippingAddr.city}
+` : ''}
+
+${order.metadata?.order_notes ? `Instructions spéciales: ${order.metadata.order_notes}\n` : ''}
+
+Suivre ma commande: ${orderUrl}
+
+Merci pour votre confiance !
+L'équipe GomGom Bonbons
+    `.trim()
 
     await sendMailjetEmail({ to, subject, html, text })
     logger.info(`Order email (${event.name}) sent to ${to} for order ${orderId}`)
