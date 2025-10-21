@@ -2,6 +2,17 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
+  // Vérifier le token d'authentification
+  const authToken = req.headers["x-fulfillment-token"] as string
+  const expectedToken = process.env.FULFILLMENT_SECRET_TOKEN
+  
+  if (!authToken || authToken !== expectedToken) {
+    return res.status(401).json({
+      success: false,
+      error: "Unauthorized: Invalid or missing authentication token",
+    })
+  }
+
   const body = req.body as { orderId?: string; trackingNumber?: string }
   const { orderId, trackingNumber } = body
 
@@ -87,7 +98,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     logger.info(`[FULFILLMENT] Fulfillment created: ${JSON.stringify(result)}`)
 
     // Envoyer un email personnalisé au client
-    const { sendMailjetEmail } = await import("../../../lib/email/mailjet.js")
+    const { sendMailjetEmail } = await import("../../lib/email/mailjet.js")
     
     const carrierName = carrier === "mondial-relay" 
       ? "Mondial Relay" 
