@@ -38,10 +38,6 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
         "items.*",
         "shipping_address.*",
         "shipping_methods.*",
-        "shipping_methods.shipping_option_id",
-        "shipping_methods.shipping_option.*",
-        "shipping_methods.shipping_option.name",
-        "shipping_methods.shipping_option.data",
       ],
       variables: { filters: { id: orderId } },
     })
@@ -61,21 +57,18 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     
     if (order.shipping_methods && order.shipping_methods.length > 0) {
       const shippingMethod = order.shipping_methods[0]
-      const shippingOption = shippingMethod.shipping_option
-      const optionName = shippingOption?.name?.toLowerCase() || ""
-      const optionData = shippingOption?.data || {}
-      const optionId = (optionData.id || "").toLowerCase()
+      const methodName = shippingMethod.name?.toLowerCase() || ""
       
-      logger.info(`[FULFILLMENT] Shipping option name: ${optionName}, id: ${optionId}`)
+      logger.info(`[FULFILLMENT] Shipping method name: ${methodName}`)
       
-      // Détecter depuis le nom ou l'ID de l'option
-      if (optionName.includes("mondial") || optionName.includes("relay") || optionId === "mondial-relay") {
+      // Détecter depuis le nom de la méthode
+      if (methodName.includes("mondial") || methodName.includes("relay")) {
         carrier = "mondial-relay"
         trackingUrl = `https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition=${trackingNumber}`
-      } else if (optionName.includes("chronopost") || optionId === "chronopost") {
+      } else if (methodName.includes("chronopost")) {
         carrier = "chronopost"
         trackingUrl = `https://www.chronopost.fr/tracking-no-cms/suivi-page?listeNumerosLT=${trackingNumber}`
-      } else if (optionName.includes("colissimo") || optionId === "colissimo") {
+      } else if (methodName.includes("colissimo")) {
         carrier = "colissimo"
         trackingUrl = `https://www.laposte.fr/outils/suivre-vos-envois?code=${trackingNumber}`
       } else {
