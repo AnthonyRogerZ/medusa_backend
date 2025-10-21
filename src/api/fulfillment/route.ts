@@ -28,7 +28,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     const remoteQuery = req.scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY) as any
     
     // Récupérer la commande avec tous les détails
-    const [order] = await remoteQuery.query({
+    const [order] = await remoteQuery({
       entryPoint: "order",
       fields: [
         "id",
