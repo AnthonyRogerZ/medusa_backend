@@ -93,7 +93,7 @@ export default async function handleOrderEmails({ event, container }: Subscriber
             phone: shippingAddr.phone,
           } : undefined,
           orderNotes: order.metadata?.order_notes,
-          orderUrl: `${frontendUrl.replace(/\/?$/, "")}/orders/${order.display_id || order.id}`,
+          orderUrl: `https://gomgom-bonbons.vercel.app/fr/print-label/${order.id}`,
         })
       } catch (slackError: any) {
         logger.error(`Erreur notification Slack: ${slackError?.message || slackError}`)
@@ -107,7 +107,7 @@ export default async function handleOrderEmails({ event, container }: Subscriber
       return
     }
 
-    const orderUrl = `${frontendUrl.replace(/\/?$/, "")}/orders/${order.display_id || order.id}`
+    const orderUrl = `https://gomgom-bonbons.vercel.app/fr/account/orders`
     const subject = event.name === OrderWorkflowEvents.COMPLETED ?
       `Votre commande #${order.display_id || order.id} est terminée` :
       `Confirmation de commande #${order.display_id || order.id}`

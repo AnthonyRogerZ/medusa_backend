@@ -142,27 +142,27 @@ function buildSlackMessage(data: OrderNotificationData) {
       {
         type: 'actions',
         elements: [
+          {
+            type: 'button',
+            text: {
+              type: 'plain_text',
+              text: '👁️ Voir la Commande',
+              emoji: true,
+            },
+            url: `https://medusabackend-production-e0e9.up.railway.app/app/orders/${orderId}`,
+            style: 'primary',
+          },
           ...(orderUrl ? [
             {
               type: 'button',
               text: {
                 type: 'plain_text',
-                text: '👁️ Voir la Commande',
+                text: '🖨️ Imprimer Étiquette',
                 emoji: true,
               },
               url: orderUrl,
-              style: 'primary',
             },
           ] : []),
-          {
-            type: 'button',
-            text: {
-              type: 'plain_text',
-              text: '🖨️ Imprimer Étiquette',
-              emoji: true,
-            },
-            url: `https://medusabackend-production-e0e9.up.railway.app/app/orders/${orderId}`,
-          },
         ],
       },
       {
