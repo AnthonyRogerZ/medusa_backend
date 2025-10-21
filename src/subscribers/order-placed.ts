@@ -52,47 +52,8 @@ export default async function handleOrderEmails({ event, container }: Subscriber
       return
     }
 
-    // Copier les métadonnées du cart vers l'order
-    logger.info(`🔍 [METADATA] Début copie métadonnées pour order ${orderId}`)
-    logger.info(`🔍 [METADATA] cart_id: ${order.cart_id || "NULL/UNDEFINED"}`)
-    logger.info(`🔍 [METADATA] order.metadata: ${JSON.stringify(order.metadata || {})}`)
-    
-    if (order.cart_id) {
-      logger.info(`🔍 [METADATA] cart_id trouvé, récupération du cart...`)
-      try {
-        const cartResult = await remoteQuery({
-          entryPoint: "cart",
-          fields: ["id", "metadata"],
-          variables: { id: order.cart_id },
-        })
-        const cart = Array.isArray(cartResult) ? cartResult[0] : cartResult
-        
-        logger.info(`🔍 [METADATA] Cart récupéré: ${cart ? "OUI" : "NON"}`)
-        logger.info(`🔍 [METADATA] cart.metadata: ${JSON.stringify(cart?.metadata || {})}`)
-        
-        if (cart?.metadata && Object.keys(cart.metadata).length > 0) {
-          logger.info(`🔍 [METADATA] Métadonnées trouvées, mise à jour de l'order...`)
-          const orderModuleService = container.resolve("orderModuleService") as any
-          await orderModuleService.updateOrders(orderId, {
-            metadata: {
-              ...order.metadata,
-              ...cart.metadata,
-            },
-          })
-          logger.info(`✅ [METADATA] Métadonnées copiées du cart vers l'order ${orderId}`)
-          if (cart.metadata.order_notes) {
-            logger.info(`📝 [METADATA] order_notes: ${cart.metadata.order_notes}`)
-          }
-        } else {
-          logger.warn(`⚠️ [METADATA] Pas de métadonnées dans le cart ${order.cart_id}`)
-        }
-      } catch (metaError: any) {
-        logger.error(`❌ [METADATA] Erreur copie métadonnées pour order ${orderId}: ${metaError?.message || metaError}`)
-        logger.error(`❌ [METADATA] Stack: ${metaError?.stack || "N/A"}`)
-      }
-    } else {
-      logger.warn(`⚠️ [METADATA] Pas de cart_id dans l'order ${orderId}, impossible de copier les métadonnées`)
-    }
+    // Note: Medusa v2 copie automatiquement cart.metadata → order.metadata lors de cart.complete()
+    // Aucune action manuelle n'est nécessaire, les order_notes sont déjà dans order.metadata
 
     const to = order.email as string | undefined
     if (!to || !to.includes("@")) {
