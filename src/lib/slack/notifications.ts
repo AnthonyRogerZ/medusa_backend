@@ -152,6 +152,16 @@ function buildSlackMessage(data: OrderNotificationData) {
             url: `https://medusabackend-production-e0e9.up.railway.app/app/orders/${orderId}`,
             style: 'primary',
           },
+          {
+            type: 'button',
+            text: {
+              type: 'plain_text',
+              text: '📦 Expédier',
+              emoji: true,
+            },
+            url: `https://gomgom-bonbons.vercel.app/fr/ship-order/${orderId}`,
+            style: 'primary',
+          },
           ...(orderUrl ? [
             {
               type: 'button',
