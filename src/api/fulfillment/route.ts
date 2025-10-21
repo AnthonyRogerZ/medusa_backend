@@ -97,6 +97,30 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
 
     logger.info(`[FULFILLMENT] Fulfillment created: ${JSON.stringify(result)}`)
 
+    // Créer le shipment avec tracking number pour marquer comme expédié
+    const { createOrderShipmentWorkflow } = await import("@medusajs/medusa/core-flows")
+    const fulfillmentId = result.id
+    
+    await createOrderShipmentWorkflow(req.scope).run({
+      input: {
+        order_id: orderId,
+        fulfillment_id: fulfillmentId,
+        items: order.items.map((item: any) => ({
+          id: item.id,
+          quantity: item.quantity,
+        })),
+        labels: [
+          {
+            tracking_number: trackingNumber,
+            tracking_url: trackingUrl,
+            label_url: "", // Optionnel
+          }
+        ],
+      },
+    })
+
+    logger.info(`[SHIPMENT] Shipment created with tracking: ${trackingNumber}`)
+
     // Envoyer un email personnalisé au client
     const { sendMailjetEmail } = await import("../../lib/email/mailjet.js")
     
