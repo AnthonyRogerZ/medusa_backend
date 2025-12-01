@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { Modules } from "@medusajs/framework/utils"
+import jwt from "jsonwebtoken"
 
 /**
  * GET /store/auth-identity
@@ -8,13 +9,35 @@ import { Modules } from "@medusajs/framework/utils"
  */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   try {
-    // Récupérer l'auth_identity_id depuis le token JWT
-    const authIdentityId = (req as any).auth_context?.auth_identity_id
+    // Récupérer le token depuis le header Authorization
+    const authHeader = req.headers.authorization
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ 
+        error: "Non authentifié",
+        message: "Token manquant dans le header Authorization" 
+      })
+    }
+
+    const token = authHeader.substring(7) // Enlever "Bearer "
+    
+    // Décoder le token (sans vérification car on veut juste l'auth_identity_id)
+    let decodedToken: any
+    try {
+      decodedToken = jwt.decode(token)
+    } catch (e) {
+      return res.status(401).json({ 
+        error: "Token invalide",
+        message: "Impossible de décoder le token" 
+      })
+    }
+
+    const authIdentityId = decodedToken?.auth_identity_id
     
     if (!authIdentityId) {
       return res.status(401).json({ 
         error: "Non authentifié",
-        message: "auth_identity_id non trouvé dans le token" 
+        message: "auth_identity_id non trouvé dans le token",
+        decoded: decodedToken
       })
     }
 
