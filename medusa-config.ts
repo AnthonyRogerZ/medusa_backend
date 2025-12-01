@@ -83,7 +83,7 @@ module.exports = defineConfig({
             options: {
               clientId: process.env.GOOGLE_CLIENT_ID,
               clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-              callbackUrl: process.env.GOOGLE_CALLBACK_URL || "https://medusabackend-production-e0e9.up.railway.app/auth/google/callback",
+              callbackUrl: process.env.GOOGLE_CALLBACK_URL || "https://gomgombonbons.com/auth/google/callback",
             }
           }
         ],
