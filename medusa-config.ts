@@ -76,6 +76,15 @@ module.exports = defineConfig({
               resetPasswordTokenExpiry: 900, // 15 minutes en secondes
               resetPasswordTokenLength: 64   // Longueur du token pour plus de sécurité
             }
+          },
+          {
+            resolve: "@medusajs/medusa/auth-google",
+            id: "google",
+            options: {
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+              callbackUrl: process.env.GOOGLE_CALLBACK_URL || "https://medusabackend-production-e0e9.up.railway.app/auth/google/callback",
+            }
           }
         ],
       },
