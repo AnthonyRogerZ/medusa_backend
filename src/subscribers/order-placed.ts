@@ -60,10 +60,11 @@ async function generateFirstOrderPromoCode(
     
     // Créer la promotion avec une règle de 10% de réduction
     // On stocke l'email du client dans metadata pour éviter les doublons
-    const promotion = await promotionModuleService.createPromotions({
+    logger.info(`[PROMO] Creating promotion with code: ${promoCode}`)
+    
+    const promotionData = {
       code: promoCode,
       type: "standard",
-      status: "active", // Important: doit être active pour être utilisable
       is_automatic: false,
       metadata: {
         customer_email: customerEmail,
@@ -75,15 +76,12 @@ async function generateFirstOrderPromoCode(
         target_type: "items", // Applique uniquement sur les produits, pas la livraison
         allocation: "across",
         currency_code: "eur",
-        max_quantity: 1, // Limite à 1 utilisation
       },
-      campaign: {
-        budget: {
-          type: "usage",
-          limit: 1, // Le code ne peut être utilisé qu'une seule fois
-        },
-      },
-    })
+    }
+    
+    logger.info(`[PROMO] Promotion data: ${JSON.stringify(promotionData)}`)
+    
+    const promotion = await promotionModuleService.createPromotions(promotionData)
     
     logger.info(`[PROMO] ✅ Created promotion ${promoCode} with ID: ${promotion?.id || 'unknown'}`)
     
