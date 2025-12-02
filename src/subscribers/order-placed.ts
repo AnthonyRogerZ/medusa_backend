@@ -21,36 +21,36 @@ async function generateFirstOrderPromoCode(
   try {
     const promotionModuleService = container.resolve("promotion") as any
     
-    // Vérifier si un code MERCI-* existe déjà pour cet email (stocké dans metadata)
-    logger.info(`[PROMO] Checking existing promos for email: ${customerEmail}`)
+    // Vérifier si une campagne MERCI existe déjà pour cet email
+    // On utilise le nom de la campagne qui contient l'email normalisé
+    const emailNormalized = customerEmail.replace(/[^a-zA-Z0-9]/g, '-')
+    const campaignPrefix = `MERCI-${emailNormalized}`
     
-    const existingPromotions = await promotionModuleService.listPromotions(
+    logger.info(`[PROMO] Checking existing campaigns for email: ${customerEmail} (prefix: ${campaignPrefix})`)
+    
+    // Lister les campagnes existantes
+    const existingCampaigns = await promotionModuleService.listCampaigns(
       {},
-      { select: ["id", "code", "metadata"], take: 1000 }
+      { select: ["id", "name"], take: 1000 }
     )
     
-    logger.info(`[PROMO] Found ${existingPromotions?.length || 0} total promotions`)
+    logger.info(`[PROMO] Found ${existingCampaigns?.length || 0} total campaigns`)
     
-    // Filtrer les promotions MERCI-*
-    const merciPromos = existingPromotions?.filter((promo: any) => 
-      promo.code?.startsWith('MERCI-')
-    ) || []
-    
-    logger.info(`[PROMO] Found ${merciPromos.length} MERCI-* promotions`)
-    
-    // Chercher si une promotion MERCI-* existe déjà pour cet email
-    const existingPromoForEmail = merciPromos.find((promo: any) => {
-      const promoEmail = promo.metadata?.customer_email?.toLowerCase()
-      logger.info(`[PROMO] Checking promo ${promo.code}: metadata email = ${promoEmail}`)
-      return promoEmail === customerEmail
+    // Chercher si une campagne existe déjà pour cet email
+    const existingCampaignForEmail = existingCampaigns?.find((campaign: any) => {
+      const matches = campaign.name?.startsWith(campaignPrefix)
+      if (campaign.name?.startsWith('MERCI-')) {
+        logger.info(`[PROMO] Checking campaign ${campaign.name}: matches = ${matches}`)
+      }
+      return matches
     })
     
-    if (existingPromoForEmail) {
-      logger.info(`[PROMO] Customer ${customerEmail} already has promo code ${existingPromoForEmail.code}, skipping`)
+    if (existingCampaignForEmail) {
+      logger.info(`[PROMO] Customer ${customerEmail} already has a MERCI campaign: ${existingCampaignForEmail.name}, skipping`)
       return null
     }
     
-    logger.info(`[PROMO] No existing promo for ${customerEmail}, generating new code`)
+    logger.info(`[PROMO] No existing campaign for ${customerEmail}, generating new code`)
     
     // Générer un code unique
     const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase()
