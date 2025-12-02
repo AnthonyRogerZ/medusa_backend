@@ -22,19 +22,31 @@ async function generateFirstOrderPromoCode(
     const promotionModuleService = container.resolve("promotion") as any
     
     // Vérifier si un code MERCI-* existe déjà pour cet email (stocké dans metadata)
+    logger.info(`[PROMO] Checking existing promos for email: ${customerEmail}`)
+    
     const existingPromotions = await promotionModuleService.listPromotions(
       {},
-      { select: ["id", "code", "metadata"] }
+      { select: ["id", "code", "metadata"], take: 1000 }
     )
+    
+    logger.info(`[PROMO] Found ${existingPromotions?.length || 0} total promotions`)
+    
+    // Filtrer les promotions MERCI-*
+    const merciPromos = existingPromotions?.filter((promo: any) => 
+      promo.code?.startsWith('MERCI-')
+    ) || []
+    
+    logger.info(`[PROMO] Found ${merciPromos.length} MERCI-* promotions`)
     
     // Chercher si une promotion MERCI-* existe déjà pour cet email
-    const alreadyHasPromo = existingPromotions?.some((promo: any) => 
-      promo.code?.startsWith('MERCI-') && 
-      promo.metadata?.customer_email?.toLowerCase() === customerEmail
-    )
+    const existingPromoForEmail = merciPromos.find((promo: any) => {
+      const promoEmail = promo.metadata?.customer_email?.toLowerCase()
+      logger.info(`[PROMO] Checking promo ${promo.code}: metadata email = ${promoEmail}`)
+      return promoEmail === customerEmail
+    })
     
-    if (alreadyHasPromo) {
-      logger.info(`[PROMO] Customer ${customerEmail} already has a MERCI promo code, skipping`)
+    if (existingPromoForEmail) {
+      logger.info(`[PROMO] Customer ${customerEmail} already has promo code ${existingPromoForEmail.code}, skipping`)
       return null
     }
     
