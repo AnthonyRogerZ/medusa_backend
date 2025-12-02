@@ -13,17 +13,11 @@ async function autoLinkGuestOrdersMiddleware(
   next()
   
   // Puis faire l'auto-link en arrière-plan (après la réponse)
-  const logger = req.scope.resolve("logger") as any
-  logger.info(`[AUTOLINK] Middleware triggered for ${req.path}`)
-  
   try {
     const customerId = (req as any).auth_context?.actor_id
-    if (!customerId) {
-      logger.info(`[AUTOLINK] No customer ID, skipping`)
-      return
-    }
+    if (!customerId) return
 
-    logger.info(`[AUTOLINK] Customer ID: ${customerId}`)
+    const logger = req.scope.resolve("logger") as any
     const customerModuleService = req.scope.resolve("customer") as any
     const orderModuleService = req.scope.resolve("order") as any
 
@@ -52,20 +46,9 @@ async function autoLinkGuestOrdersMiddleware(
     // Pour compatibilité avec le reste du code
     const guestOrders = ordersToLink
 
-    logger.info(`[AUTOLINK] Total orders: ${allOrders.length}, Guest orders for ${emailLower}: ${guestOrders.length}`)
-    
-    // Log TOUTES les commandes pour debug (limité aux 20 dernières)
-    const recentOrders = (Array.isArray(allOrders) ? allOrders : []).slice(-20)
-    recentOrders.forEach((o: any) => {
-      logger.info(`[AUTOLINK] Order ${o.display_id}: email=${o.email}, customer_id=${o.customer_id || 'NULL'}`)
-    })
+    if (guestOrders.length === 0) return
 
-    if (guestOrders.length === 0) {
-      logger.info(`[AUTOLINK] No guest orders to link`)
-      return
-    }
-
-    logger.info(`[AUTOLINK] Found ${guestOrders.length} guest orders to link for ${customer.email}`)
+    logger.info(`[AUTOLINK] Linking ${guestOrders.length} orders to customer ${customerId}`)
 
     for (const order of guestOrders) {
       try {
