@@ -3,6 +3,61 @@ import corsMiddleware from "./middlewares/cors"
 import compression from "compression"
 import type { MedusaNextFunction, MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
+// Auto-link guest orders middleware - s'exécute sur /store/customers/me
+async function autoLinkGuestOrdersMiddleware(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction
+) {
+  // Exécuter le handler original d'abord
+  next()
+  
+  // Puis faire l'auto-link en arrière-plan (après la réponse)
+  try {
+    const customerId = (req as any).auth_context?.actor_id
+    if (!customerId) return
+
+    const logger = req.scope.resolve("logger") as any
+    const customerModuleService = req.scope.resolve("customer") as any
+    const orderModuleService = req.scope.resolve("order") as any
+
+    const customer = await customerModuleService.retrieveCustomer(customerId)
+    if (!customer?.email) return
+
+    const emailLower = customer.email.toLowerCase()
+
+    // Récupérer les commandes guest
+    const allOrders = await orderModuleService.listOrders(
+      {},
+      { select: ["id", "email", "customer_id", "display_id", "status", "canceled_at"], take: 500 }
+    )
+
+    const guestOrders = (Array.isArray(allOrders) ? allOrders : []).filter((order: any) =>
+      order &&
+      order.email?.toLowerCase() === emailLower &&
+      !order.customer_id &&
+      !order.canceled_at &&
+      order.status !== "canceled" &&
+      order.status !== "archived"
+    )
+
+    if (guestOrders.length === 0) return
+
+    logger.info(`[AUTOLINK] Found ${guestOrders.length} guest orders to link for ${customer.email}`)
+
+    for (const order of guestOrders) {
+      try {
+        await orderModuleService.updateOrders(order.id, { customer_id: customerId })
+        logger.info(`[AUTOLINK] Linked order ${order.display_id} to customer ${customerId}`)
+      } catch (e: any) {
+        logger.error(`[AUTOLINK] Failed: ${e?.message}`)
+      }
+    }
+  } catch (e) {
+    // Silencieux
+  }
+}
+
 // Simple cache-control middleware for catalog endpoints
 function cacheControl(
   req: MedusaRequest,
@@ -49,6 +104,10 @@ export default defineMiddlewares({
     {
       matcher: "*",
       middlewares: [compression(), cacheControl, corsMiddleware],
+    },
+    {
+      matcher: "/store/customers/me",
+      middlewares: [autoLinkGuestOrdersMiddleware],
     },
   ],
 })
