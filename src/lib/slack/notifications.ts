@@ -80,20 +80,26 @@ function buildSlackMessage(data: OrderNotificationData) {
     return '🚚'
   }
 
-  // Adresse formatée
+  // Adresse formatée - Si point relais, on affiche seulement nom/prénom + téléphone
   const addressLines: string[] = []
   if (shippingAddress) {
     const fullName = `${shippingAddress.firstName || ''} ${shippingAddress.lastName || ''}`.trim()
     if (fullName) addressLines.push(fullName)
-    if (shippingAddress.address1) addressLines.push(shippingAddress.address1)
-    if (shippingAddress.address2) addressLines.push(shippingAddress.address2)
-    const cityParts: string[] = []
-    if (shippingAddress.postalCode) cityParts.push(shippingAddress.postalCode)
-    if (shippingAddress.city) cityParts.push(shippingAddress.city)
-    if (shippingAddress.province) cityParts.push(shippingAddress.province)
-    const cityLine = cityParts.join(' ')
-    if (cityLine) addressLines.push(cityLine)
-    if (shippingAddress.countryCode) addressLines.push(shippingAddress.countryCode.toUpperCase())
+    
+    // Si pas de point relais, afficher l'adresse complète
+    if (!relayPoint) {
+      if (shippingAddress.address1) addressLines.push(shippingAddress.address1)
+      if (shippingAddress.address2) addressLines.push(shippingAddress.address2)
+      const cityParts: string[] = []
+      if (shippingAddress.postalCode) cityParts.push(shippingAddress.postalCode)
+      if (shippingAddress.city) cityParts.push(shippingAddress.city)
+      if (shippingAddress.province) cityParts.push(shippingAddress.province)
+      const cityLine = cityParts.join(' ')
+      if (cityLine) addressLines.push(cityLine)
+      if (shippingAddress.countryCode) addressLines.push(shippingAddress.countryCode.toUpperCase())
+    }
+    
+    // Toujours afficher le téléphone et email
     if (shippingAddress.phone) addressLines.push(`📞 ${shippingAddress.phone}`)
   }
 
@@ -161,7 +167,9 @@ function buildSlackMessage(data: OrderNotificationData) {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `*📍 Adresse de Livraison:*\n${addressLines.join('\n')}`,
+            text: relayPoint 
+              ? `*👤 Client:*\n${addressLines.join('\n')}`
+              : `*📍 Adresse de Livraison:*\n${addressLines.join('\n')}`,
           },
         },
       ] : []),
