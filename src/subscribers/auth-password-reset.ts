@@ -46,9 +46,18 @@ export default async function handleAuthPasswordReset({ event, container }: Subs
     return
   }
 
-  const resetUrl = `${frontendUrl.replace(/\/?$/, "")}/reset-password?token=${encodeURIComponent(token)}&actor_type=${encodeURIComponent(
-    actor_type || "customer"
-  )}&email=${encodeURIComponent(to)}`
+  // Pour les admins (user), utiliser l'URL du backend Railway
+  // Pour les customers, utiliser l'URL du frontend
+  const backendUrl = process.env.BACKEND_URL || "https://medusabackend-production-e0e9.up.railway.app"
+  
+  let resetUrl: string
+  if (actor_type === "user") {
+    // Admin reset - va vers l'admin Medusa
+    resetUrl = `${backendUrl.replace(/\/?$/, "")}/app/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(to)}`
+  } else {
+    // Customer reset - va vers le frontend
+    resetUrl = `${frontendUrl.replace(/\/?$/, "")}/fr/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(to)}`
+  }
 
   const subject = actor_type === "user" ? "Réinitialisation du mot de passe (Admin)" : "Réinitialisation de votre mot de passe"
 
