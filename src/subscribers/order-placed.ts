@@ -51,6 +51,7 @@ async function generateFirstOrderPromoCode(
     const promotion = await promotionModuleService.createPromotions({
       code: promoCode,
       type: "standard",
+      status: "active", // Important: doit être active pour être utilisable
       is_automatic: false,
       metadata: {
         customer_email: customerEmail,
@@ -61,14 +62,8 @@ async function generateFirstOrderPromoCode(
         value: 10,
         target_type: "order",
         allocation: "across",
+        currency_code: "eur",
       },
-      rules: [
-        {
-          attribute: "currency_code",
-          operator: "eq",
-          values: ["eur"],
-        },
-      ],
     })
     
     logger.info(`[PROMO] ✅ Created promotion ${promoCode} with ID: ${promotion?.id || 'unknown'}`)
