@@ -117,16 +117,50 @@ async function linkGuestOrders(
     const orderModuleService = scope.resolve("order") as any
     const emailLower = email.toLowerCase()
 
-    // Récupérer les commandes avec cet email
-    const ordersResult = await orderModuleService.listOrders(
-      { email: emailLower },
-      { select: ["id", "email", "customer_id", "display_id", "status", "canceled_at"] }
+    logger.info(`[VERIFY-EMAIL] Looking for guest orders with email: ${emailLower}`)
+
+    // Récupérer les commandes - essayer avec l'email original ET en minuscules
+    let ordersResult: any[] = []
+    
+    try {
+      // Essayer d'abord avec l'email en minuscules
+      const result1 = await orderModuleService.listOrders(
+        { email: emailLower },
+        { select: ["id", "email", "customer_id", "display_id", "status", "canceled_at"] }
+      )
+      ordersResult = Array.isArray(result1) ? result1 : [result1].filter(Boolean)
+      logger.info(`[VERIFY-EMAIL] Found ${ordersResult.length} orders with lowercase email`)
+    } catch (e) {
+      logger.warn(`[VERIFY-EMAIL] listOrders with lowercase failed`)
+    }
+
+    // Si pas de résultats, essayer avec l'email original
+    if (ordersResult.length === 0 && email !== emailLower) {
+      try {
+        const result2 = await orderModuleService.listOrders(
+          { email: email },
+          { select: ["id", "email", "customer_id", "display_id", "status", "canceled_at"] }
+        )
+        const orders2 = Array.isArray(result2) ? result2 : [result2].filter(Boolean)
+        ordersResult = [...ordersResult, ...orders2]
+        logger.info(`[VERIFY-EMAIL] Found ${orders2.length} orders with original email`)
+      } catch (e) {
+        logger.warn(`[VERIFY-EMAIL] listOrders with original email failed`)
+      }
+    }
+
+    // Dédupliquer par ID
+    const uniqueOrders = ordersResult.filter((order, index, self) =>
+      index === self.findIndex((o) => o.id === order.id)
     )
 
-    const orders = Array.isArray(ordersResult) ? ordersResult : [ordersResult].filter(Boolean)
+    logger.info(`[VERIFY-EMAIL] Total unique orders found: ${uniqueOrders.length}`)
+    uniqueOrders.forEach((o: any) => {
+      logger.info(`[VERIFY-EMAIL] Order ${o.display_id}: email=${o.email}, customer_id=${o.customer_id}, status=${o.status}`)
+    })
 
     // Filtrer les commandes guest (sans customer_id) et non annulées
-    const guestOrders = orders.filter((order: any) =>
+    const guestOrders = uniqueOrders.filter((order: any) =>
       order &&
       order.email?.toLowerCase() === emailLower &&
       !order.customer_id &&
@@ -134,6 +168,8 @@ async function linkGuestOrders(
       order.status !== "canceled" && // Exclure par statut aussi
       order.status !== "archived" // Exclure les archivées
     )
+
+    logger.info(`[VERIFY-EMAIL] Guest orders to link: ${guestOrders.length}`)
 
     if (guestOrders.length === 0) {
       logger.info(`[VERIFY-EMAIL] No guest orders to link for ${email}`)
