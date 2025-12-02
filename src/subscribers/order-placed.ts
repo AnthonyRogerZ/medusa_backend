@@ -226,7 +226,22 @@ export default async function handleOrderEmails({ event, container }: Subscriber
       ).join("")
 
       const shippingAddr = order.shipping_address
-      const addressHtml = shippingAddr ? `
+      const relayPoint = order.metadata?.relay_point
+      const shippingMethodName = order.shipping_methods?.[0]?.name?.toLowerCase() || ''
+      const isMondialRelay = shippingMethodName.includes('mondial') || shippingMethodName.includes('relay')
+      
+      // Afficher le point relais si Mondial Relay, sinon l'adresse normale
+      const addressHtml = isMondialRelay && relayPoint ? `
+      <div style="background: #fff5e6; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #ff9800;">
+        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #e65100;">📮 Point Relais de livraison</h3>
+        <p style="margin: 5px 0; color: #333; line-height: 1.6;">
+          <strong style="color: #e65100;">${relayPoint.name}</strong><br>
+          ${relayPoint.address}<br>
+          ${relayPoint.postalCode} ${relayPoint.city}
+        </p>
+        ${shippingAddr?.phone ? `<p style="margin: 10px 0 0 0; color: #666;">📞 ${shippingAddr.phone}</p>` : ''}
+      </div>
+      ` : (shippingAddr ? `
       <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
         <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #000;">📍 Adresse de livraison</h3>
         <p style="margin: 5px 0; color: #333; line-height: 1.6;">
@@ -238,7 +253,7 @@ export default async function handleOrderEmails({ event, container }: Subscriber
           ${shippingAddr.phone ? `📞 ${shippingAddr.phone}` : ''}
         </p>
       </div>
-      ` : ''
+      ` : '')
 
       const orderNotesHtml = order.metadata?.order_notes ? `
       <div style="background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; padding: 15px; margin: 25px 0;">
@@ -348,12 +363,17 @@ Sous-total: ${format(order.subtotal, order.currency_code)}
 Livraison: ${format(order.shipping_total, order.currency_code)}
 Total: ${format(order.total, order.currency_code)}
 
-${shippingAddr ? `
+${isMondialRelay && relayPoint ? `
+Point Relais de livraison:
+${relayPoint.name}
+${relayPoint.address}
+${relayPoint.postalCode} ${relayPoint.city}
+` : (shippingAddr ? `
 Adresse de livraison:
 ${shippingAddr.first_name} ${shippingAddr.last_name}
 ${shippingAddr.address_1}
 ${shippingAddr.postal_code} ${shippingAddr.city}
-` : ''}
+` : '')}
 
 ${order.metadata?.order_notes ? `Instructions spéciales: ${order.metadata.order_notes}\n` : ''}
 
