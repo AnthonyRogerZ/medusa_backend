@@ -228,14 +228,16 @@ export default async function handleOrderEmails({ event, container }: Subscriber
       const shippingAddr = order.shipping_address
       const relayPoint = order.metadata?.relay_point
       const shippingMethodName = order.shipping_methods?.[0]?.name?.toLowerCase() || ''
-      const isMondialRelay = shippingMethodName.includes('mondial') || shippingMethodName.includes('relay')
+      const isMondialRelay = shippingMethodName.includes('mondial')
+      const isChronopost = shippingMethodName.includes('chronopost') || shippingMethodName.includes('chrono')
+      const isRelayPoint = (isMondialRelay || isChronopost) && relayPoint
       
-      // Afficher le point relais si Mondial Relay, sinon l'adresse normale
-      const addressHtml = isMondialRelay && relayPoint ? `
-      <div style="background: #fff5e6; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #ff9800;">
-        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #e65100;">📮 Point Relais de livraison</h3>
+      // Afficher le point relais si Mondial Relay ou Chronopost, sinon l'adresse normale
+      const addressHtml = isRelayPoint ? `
+      <div style="background: ${isChronopost ? '#e3f2fd' : '#fff5e6'}; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid ${isChronopost ? '#1976d2' : '#ff9800'};">
+        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: ${isChronopost ? '#1565c0' : '#e65100'};">${isChronopost ? '⚡' : '📮'} Point ${isChronopost ? 'Chronopost' : 'Relais'} de livraison</h3>
         <p style="margin: 5px 0; color: #333; line-height: 1.6;">
-          <strong style="color: #e65100;">${relayPoint.name}</strong><br>
+          <strong style="color: ${isChronopost ? '#1565c0' : '#e65100'};">${relayPoint.name}</strong><br>
           ${relayPoint.address}<br>
           ${relayPoint.postalCode} ${relayPoint.city}
         </p>
@@ -363,8 +365,8 @@ Sous-total: ${format(order.subtotal, order.currency_code)}
 Livraison: ${format(order.shipping_total, order.currency_code)}
 Total: ${format(order.total, order.currency_code)}
 
-${isMondialRelay && relayPoint ? `
-Point Relais de livraison:
+${isRelayPoint ? `
+Point ${isChronopost ? 'Chronopost' : 'Relais'} de livraison:
 ${relayPoint.name}
 ${relayPoint.address}
 ${relayPoint.postalCode} ${relayPoint.city}

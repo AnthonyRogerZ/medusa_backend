@@ -145,7 +145,7 @@ function buildSlackMessage(data: OrderNotificationData) {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `*📮 Point Relais sélectionné:*\n*${relayPoint.name}*\n${relayPoint.address}\n${relayPoint.postalCode} ${relayPoint.city}`,
+            text: `*${shippingMethod?.name?.toLowerCase().includes('chrono') ? '⚡ Point Chronopost' : '📮 Point Relais'} sélectionné:*\n*${relayPoint.name}*\n${relayPoint.address}\n${relayPoint.postalCode} ${relayPoint.city}`,
           },
         },
       ] : []),
