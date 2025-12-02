@@ -38,14 +38,19 @@ async function autoLinkGuestOrdersMiddleware(
       { select: ["id", "email", "customer_id", "display_id", "status", "canceled_at"], take: 500 }
     )
 
-    const guestOrders = (Array.isArray(allOrders) ? allOrders : []).filter((order: any) =>
+    // Trouver les commandes avec cet email qui ne sont PAS liées à CE customer
+    // (inclut les guest ET les commandes liées à d'autres customers "ghost" avec le même email)
+    const ordersToLink = (Array.isArray(allOrders) ? allOrders : []).filter((order: any) =>
       order &&
       order.email?.toLowerCase() === emailLower &&
-      !order.customer_id &&
+      order.customer_id !== customerId && // Pas déjà lié à ce compte
       !order.canceled_at &&
       order.status !== "canceled" &&
       order.status !== "archived"
     )
+    
+    // Pour compatibilité avec le reste du code
+    const guestOrders = ordersToLink
 
     logger.info(`[AUTOLINK] Total orders: ${allOrders.length}, Guest orders for ${emailLower}: ${guestOrders.length}`)
     
