@@ -4,6 +4,80 @@ import { sendMailjetEmail } from "../lib/email/mailjet"
 import { sendOrderNotificationToSlack } from "../lib/slack/notifications"
 
 /**
+ * Génère un code promo unique pour les nouveaux clients (1ère commande)
+ * Le code donne 10% de réduction et n'est utilisable qu'une seule fois
+ */
+async function generateFirstOrderPromoCode(
+  container: any,
+  order: any,
+  logger: any
+): Promise<string | null> {
+  const customerEmail = order.email?.toLowerCase()
+  if (!customerEmail) {
+    logger.info(`[PROMO] No email for order ${order.display_id}, skipping promo code`)
+    return null
+  }
+
+  try {
+    const orderModuleService = container.resolve("order") as any
+    
+    // Compter les commandes de ce client (par email)
+    const customerOrders = await orderModuleService.listOrders(
+      { email: customerEmail },
+      { select: ["id"] }
+    )
+    
+    const orderCount = customerOrders?.length || 0
+    logger.info(`[PROMO] Customer ${customerEmail} has ${orderCount} order(s)`)
+    
+    // Si ce n'est pas la première commande, pas de code promo
+    if (orderCount > 1) {
+      logger.info(`[PROMO] Not first order for ${customerEmail}, skipping promo code`)
+      return null
+    }
+    
+    // Générer un code unique
+    const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase()
+    const promoCode = `MERCI-${randomPart}`
+    
+    logger.info(`[PROMO] Generating first order promo code: ${promoCode} for ${customerEmail}`)
+    
+    // Créer la promotion via le module promotion
+    const promotionModuleService = container.resolve("promotion") as any
+    
+    // Créer la promotion avec une règle de 10% de réduction
+    const promotion = await promotionModuleService.createPromotions({
+      code: promoCode,
+      type: "standard",
+      is_automatic: false,
+      application_method: {
+        type: "percentage",
+        value: 10,
+        target_type: "order",
+        allocation: "across",
+      },
+      rules: [
+        {
+          attribute: "currency_code",
+          operator: "eq",
+          values: ["eur"],
+        },
+      ],
+    })
+    
+    logger.info(`[PROMO] ✅ Created promotion ${promoCode} with ID: ${promotion?.id || 'unknown'}`)
+    
+    return promoCode
+    
+  } catch (error: any) {
+    logger.error(`[PROMO] Error generating promo code: ${error?.message}`)
+    logger.error(`[PROMO] Error stack: ${error?.stack}`)
+    // Ne pas bloquer la commande si la création du code échoue
+    return null
+  }
+}
+
+/**
  * Auto-link une commande guest à un compte client existant si l'email correspond
  */
 async function autoLinkOrderToCustomer(
@@ -126,11 +200,19 @@ export default async function handleOrderEmails({ event, container }: Subscriber
     // Aucune action manuelle n'est nécessaire, les order_notes sont déjà dans order.metadata
 
     // AUTO-LINK: Si la commande est guest, vérifier si un compte existe avec cet email
+    let firstOrderPromoCode: string | null = null
     if (event.name === OrderWorkflowEvents.PLACED) {
       try {
         await autoLinkOrderToCustomer(container, order, logger)
       } catch (linkError: any) {
         logger.error(`[ORDER-PLACED] Auto-link error: ${linkError?.message}`)
+      }
+      
+      // Générer un code promo si c'est la première commande
+      try {
+        firstOrderPromoCode = await generateFirstOrderPromoCode(container, order, logger)
+      } catch (promoError: any) {
+        logger.error(`[ORDER-PLACED] Promo code error: ${promoError?.message}`)
       }
     }
 
@@ -339,6 +421,30 @@ export default async function handleOrderEmails({ event, container }: Subscriber
             </p>
           </div>
           
+          ${firstOrderPromoCode ? `
+          <!-- Code Promo Première Commande -->
+          <div style="background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 100%); border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center;">
+            <p style="margin: 0 0 10px 0; color: #fff; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+              🎁 Cadeau de bienvenue
+            </p>
+            <p style="margin: 0 0 15px 0; color: #fff; font-size: 18px; font-weight: bold;">
+              Merci pour votre première commande !
+            </p>
+            <div style="background: #fff; border-radius: 8px; padding: 15px; display: inline-block; margin: 10px 0;">
+              <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">Votre code promo personnel</p>
+              <p style="margin: 0; color: #C4668A; font-size: 28px; font-weight: bold; letter-spacing: 2px;">
+                ${firstOrderPromoCode}
+              </p>
+            </div>
+            <p style="margin: 15px 0 0 0; color: #fff; font-size: 16px;">
+              <strong>-10%</strong> sur votre prochaine commande
+            </p>
+            <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.8); font-size: 12px;">
+              Code à usage unique • Sans minimum d'achat
+            </p>
+          </div>
+          ` : ''}
+          
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
           
           <!-- Footer -->
@@ -378,7 +484,13 @@ ${shippingAddr.postal_code} ${shippingAddr.city}
 ` : '')}
 
 ${order.metadata?.order_notes ? `Instructions spéciales: ${order.metadata.order_notes}\n` : ''}
-
+${firstOrderPromoCode ? `
+🎁 CADEAU DE BIENVENUE
+Merci pour votre première commande !
+Votre code promo personnel: ${firstOrderPromoCode}
+-10% sur votre prochaine commande
+Code à usage unique • Sans minimum d'achat
+` : ''}
 Suivre ma commande: ${orderUrl}
 
 Merci pour votre confiance !
