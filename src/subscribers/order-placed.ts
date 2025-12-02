@@ -62,10 +62,25 @@ async function generateFirstOrderPromoCode(
     // On stocke l'email du client dans metadata pour éviter les doublons
     logger.info(`[PROMO] Creating promotion with code: ${promoCode}`)
     
+    // D'abord créer une campagne avec budget usage=1 pour limiter à 1 utilisation
+    const campaignName = `MERCI-${customerEmail.replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}`
+    
+    const campaign = await promotionModuleService.createCampaigns({
+      name: campaignName,
+      campaign_identifier: promoCode,
+      budget: {
+        type: "usage",
+        limit: 1, // Le code ne peut être utilisé qu'une seule fois
+      },
+    })
+    
+    logger.info(`[PROMO] Created campaign ${campaignName} with ID: ${campaign?.id}`)
+    
     const promotionData = {
       code: promoCode,
       type: "standard",
       is_automatic: false,
+      campaign_id: campaign.id, // Lier à la campagne pour la limite d'usage
       metadata: {
         customer_email: customerEmail,
         created_for_order: order.display_id || order.id,
