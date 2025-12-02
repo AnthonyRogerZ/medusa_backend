@@ -60,7 +60,7 @@ async function generateFirstOrderPromoCode(
       application_method: {
         type: "percentage",
         value: 10,
-        target_type: "order",
+        target_type: "items", // Applique uniquement sur les produits, pas la livraison
         allocation: "across",
         currency_code: "eur",
       },
