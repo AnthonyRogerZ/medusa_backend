@@ -146,6 +146,9 @@ export default async function handleOrderEmails({ event, container }: Subscriber
         // Debug: voir ce qui est disponible
         logger.info(`[DEBUG] shippingMethod structure: ${JSON.stringify(shippingMethod)}`)
         
+        // Récupérer le point relais depuis les metadata
+        const relayPoint = order.metadata?.relay_point
+        
         await sendOrderNotificationToSlack({
           orderId: order.id,
           displayId: order.display_id || order.id,
@@ -172,6 +175,14 @@ export default async function handleOrderEmails({ event, container }: Subscriber
           shippingMethod: shippingMethod ? {
             name: shippingMethod.name || 'Livraison',
             amount: shippingMethod.amount || 0,
+          } : undefined,
+          relayPoint: relayPoint ? {
+            id: relayPoint.id,
+            name: relayPoint.name,
+            address: relayPoint.address,
+            postalCode: relayPoint.postalCode,
+            city: relayPoint.city,
+            country: relayPoint.country,
           } : undefined,
           orderNotes: order.metadata?.order_notes,
           orderUrl: `https://gomgom-bonbons.vercel.app/fr/print-label/${order.id}`,

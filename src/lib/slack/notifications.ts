@@ -29,6 +29,14 @@ interface OrderNotificationData {
     name: string
     amount: number
   }
+  relayPoint?: {
+    id: string
+    name: string
+    address: string
+    postalCode: string
+    city: string
+    country?: string
+  }
   orderNotes?: string
   orderUrl?: string
 }
@@ -58,6 +66,7 @@ function buildSlackMessage(data: OrderNotificationData) {
     items,
     shippingAddress,
     shippingMethod,
+    relayPoint,
     orderNotes,
     orderUrl,
   } = data
@@ -122,6 +131,15 @@ function buildSlackMessage(data: OrderNotificationData) {
           text: {
             type: 'mrkdwn',
             text: `*${getShippingIcon(shippingMethod.name)} Mode de livraison:*\n${shippingMethod.name} (${formatAmount(shippingMethod.amount, currencyCode)})`,
+          },
+        },
+      ] : []),
+      ...(relayPoint ? [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `*📮 Point Relais sélectionné:*\n*${relayPoint.name}*\n${relayPoint.address}\n${relayPoint.postalCode} ${relayPoint.city}`,
           },
         },
       ] : []),
