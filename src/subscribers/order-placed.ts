@@ -75,6 +75,13 @@ async function generateFirstOrderPromoCode(
         target_type: "items", // Applique uniquement sur les produits, pas la livraison
         allocation: "across",
         currency_code: "eur",
+        max_quantity: 1, // Limite à 1 utilisation
+      },
+      campaign: {
+        budget: {
+          type: "usage",
+          limit: 1, // Le code ne peut être utilisé qu'une seule fois
+        },
       },
     })
     
