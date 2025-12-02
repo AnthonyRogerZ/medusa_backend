@@ -120,16 +120,19 @@ async function linkGuestOrders(
     // Récupérer les commandes avec cet email
     const ordersResult = await orderModuleService.listOrders(
       { email: emailLower },
-      { select: ["id", "email", "customer_id", "display_id"] }
+      { select: ["id", "email", "customer_id", "display_id", "status", "canceled_at"] }
     )
 
     const orders = Array.isArray(ordersResult) ? ordersResult : [ordersResult].filter(Boolean)
 
-    // Filtrer les commandes guest (sans customer_id)
+    // Filtrer les commandes guest (sans customer_id) et non annulées
     const guestOrders = orders.filter((order: any) =>
       order &&
       order.email?.toLowerCase() === emailLower &&
-      !order.customer_id
+      !order.customer_id &&
+      !order.canceled_at && // Exclure les commandes annulées
+      order.status !== "canceled" && // Exclure par statut aussi
+      order.status !== "archived" // Exclure les archivées
     )
 
     if (guestOrders.length === 0) {
