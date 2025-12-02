@@ -79,6 +79,7 @@ async function generateFirstOrderPromoCode(
     const promotionData = {
       code: promoCode,
       type: "standard",
+      status: "active", // IMPORTANT: Le code doit être actif pour fonctionner
       is_automatic: false,
       campaign_id: campaign.id, // Lier à la campagne pour la limite d'usage
       metadata: {
