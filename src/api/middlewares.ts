@@ -13,11 +13,17 @@ async function autoLinkGuestOrdersMiddleware(
   next()
   
   // Puis faire l'auto-link en arrière-plan (après la réponse)
+  const logger = req.scope.resolve("logger") as any
+  logger.info(`[AUTOLINK] Middleware triggered for ${req.path}`)
+  
   try {
     const customerId = (req as any).auth_context?.actor_id
-    if (!customerId) return
+    if (!customerId) {
+      logger.info(`[AUTOLINK] No customer ID, skipping`)
+      return
+    }
 
-    const logger = req.scope.resolve("logger") as any
+    logger.info(`[AUTOLINK] Customer ID: ${customerId}`)
     const customerModuleService = req.scope.resolve("customer") as any
     const orderModuleService = req.scope.resolve("order") as any
 
@@ -41,7 +47,20 @@ async function autoLinkGuestOrdersMiddleware(
       order.status !== "archived"
     )
 
-    if (guestOrders.length === 0) return
+    logger.info(`[AUTOLINK] Total orders: ${allOrders.length}, Guest orders for ${emailLower}: ${guestOrders.length}`)
+    
+    // Log toutes les commandes avec cet email pour debug
+    const emailOrders = (Array.isArray(allOrders) ? allOrders : []).filter((o: any) => 
+      o?.email?.toLowerCase() === emailLower
+    )
+    emailOrders.forEach((o: any) => {
+      logger.info(`[AUTOLINK] Order ${o.display_id}: customer_id=${o.customer_id || 'NULL'}, status=${o.status}`)
+    })
+
+    if (guestOrders.length === 0) {
+      logger.info(`[AUTOLINK] No guest orders to link`)
+      return
+    }
 
     logger.info(`[AUTOLINK] Found ${guestOrders.length} guest orders to link for ${customer.email}`)
 
