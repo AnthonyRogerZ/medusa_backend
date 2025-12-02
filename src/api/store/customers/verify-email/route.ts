@@ -119,50 +119,55 @@ async function linkGuestOrders(
 
     logger.info(`[VERIFY-EMAIL] Looking for guest orders with email: ${emailLower}`)
 
-    // Récupérer les commandes - essayer avec l'email original ET en minuscules
-    let ordersResult: any[] = []
+    // Utiliser remoteQuery avec un filtre ILIKE pour recherche insensible à la casse
+    const remoteQuery = scope.resolve("remoteQuery") as any
+    
+    let allOrders: any[] = []
     
     try {
-      // Essayer d'abord avec l'email en minuscules
-      const result1 = await orderModuleService.listOrders(
-        { email: emailLower },
-        { select: ["id", "email", "customer_id", "display_id", "status", "canceled_at"] }
-      )
-      ordersResult = Array.isArray(result1) ? result1 : [result1].filter(Boolean)
-      logger.info(`[VERIFY-EMAIL] Found ${ordersResult.length} orders with lowercase email`)
-    } catch (e) {
-      logger.warn(`[VERIFY-EMAIL] listOrders with lowercase failed`)
-    }
-
-    // Si pas de résultats, essayer avec l'email original
-    if (ordersResult.length === 0 && email !== emailLower) {
+      // Récupérer toutes les commandes guest (sans customer_id) 
+      // et filtrer par email côté code pour être insensible à la casse
+      const ordersResult = await remoteQuery({
+        entryPoint: "order",
+        fields: ["id", "email", "customer_id", "display_id", "status", "canceled_at"],
+        variables: {
+          filters: {
+            customer_id: null, // Seulement les commandes guest
+          },
+        },
+      })
+      
+      allOrders = Array.isArray(ordersResult) ? ordersResult : [ordersResult].filter(Boolean)
+      logger.info(`[VERIFY-EMAIL] Found ${allOrders.length} total guest orders in database`)
+    } catch (e: any) {
+      logger.warn(`[VERIFY-EMAIL] remoteQuery failed: ${e?.message}, trying listOrders`)
+      
+      // Fallback: récupérer avec listOrders
       try {
-        const result2 = await orderModuleService.listOrders(
-          { email: email },
-          { select: ["id", "email", "customer_id", "display_id", "status", "canceled_at"] }
+        const result = await orderModuleService.listOrders(
+          {},
+          { select: ["id", "email", "customer_id", "display_id", "status", "canceled_at"], take: 1000 }
         )
-        const orders2 = Array.isArray(result2) ? result2 : [result2].filter(Boolean)
-        ordersResult = [...ordersResult, ...orders2]
-        logger.info(`[VERIFY-EMAIL] Found ${orders2.length} orders with original email`)
-      } catch (e) {
-        logger.warn(`[VERIFY-EMAIL] listOrders with original email failed`)
+        allOrders = Array.isArray(result) ? result : [result].filter(Boolean)
+        logger.info(`[VERIFY-EMAIL] Fallback found ${allOrders.length} orders`)
+      } catch (e2: any) {
+        logger.error(`[VERIFY-EMAIL] listOrders also failed: ${e2?.message}`)
       }
     }
 
-    // Dédupliquer par ID
-    const uniqueOrders = ordersResult.filter((order, index, self) =>
-      index === self.findIndex((o) => o.id === order.id)
+    // Filtrer par email (insensible à la casse)
+    const matchingOrders = allOrders.filter((order: any) =>
+      order?.email?.toLowerCase() === emailLower
     )
-
-    logger.info(`[VERIFY-EMAIL] Total unique orders found: ${uniqueOrders.length}`)
-    uniqueOrders.forEach((o: any) => {
+    
+    logger.info(`[VERIFY-EMAIL] Orders matching email ${emailLower}: ${matchingOrders.length}`)
+    matchingOrders.forEach((o: any) => {
       logger.info(`[VERIFY-EMAIL] Order ${o.display_id}: email=${o.email}, customer_id=${o.customer_id}, status=${o.status}`)
     })
 
     // Filtrer les commandes guest (sans customer_id) et non annulées
-    const guestOrders = uniqueOrders.filter((order: any) =>
+    const guestOrders = matchingOrders.filter((order: any) =>
       order &&
-      order.email?.toLowerCase() === emailLower &&
       !order.customer_id &&
       !order.canceled_at && // Exclure les commandes annulées
       order.status !== "canceled" && // Exclure par statut aussi
