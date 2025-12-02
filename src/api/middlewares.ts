@@ -49,12 +49,10 @@ async function autoLinkGuestOrdersMiddleware(
 
     logger.info(`[AUTOLINK] Total orders: ${allOrders.length}, Guest orders for ${emailLower}: ${guestOrders.length}`)
     
-    // Log toutes les commandes avec cet email pour debug
-    const emailOrders = (Array.isArray(allOrders) ? allOrders : []).filter((o: any) => 
-      o?.email?.toLowerCase() === emailLower
-    )
-    emailOrders.forEach((o: any) => {
-      logger.info(`[AUTOLINK] Order ${o.display_id}: customer_id=${o.customer_id || 'NULL'}, status=${o.status}`)
+    // Log TOUTES les commandes pour debug (limité aux 20 dernières)
+    const recentOrders = (Array.isArray(allOrders) ? allOrders : []).slice(-20)
+    recentOrders.forEach((o: any) => {
+      logger.info(`[AUTOLINK] Order ${o.display_id}: email=${o.email}, customer_id=${o.customer_id || 'NULL'}`)
     })
 
     if (guestOrders.length === 0) {
