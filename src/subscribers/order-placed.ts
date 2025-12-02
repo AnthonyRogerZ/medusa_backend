@@ -19,22 +19,26 @@ async function generateFirstOrderPromoCode(
   }
 
   try {
-    const orderModuleService = container.resolve("order") as any
+    const promotionModuleService = container.resolve("promotion") as any
     
-    // Compter les commandes de ce client (par email)
-    const customerOrders = await orderModuleService.listOrders(
-      { email: customerEmail },
-      { select: ["id"] }
+    // Vérifier si un code MERCI-* existe déjà pour cet email (stocké dans metadata)
+    const existingPromotions = await promotionModuleService.listPromotions(
+      {},
+      { select: ["id", "code", "metadata"] }
     )
     
-    const orderCount = customerOrders?.length || 0
-    logger.info(`[PROMO] Customer ${customerEmail} has ${orderCount} order(s)`)
+    // Chercher si une promotion MERCI-* existe déjà pour cet email
+    const alreadyHasPromo = existingPromotions?.some((promo: any) => 
+      promo.code?.startsWith('MERCI-') && 
+      promo.metadata?.customer_email?.toLowerCase() === customerEmail
+    )
     
-    // Si ce n'est pas la première commande, pas de code promo
-    if (orderCount > 1) {
-      logger.info(`[PROMO] Not first order for ${customerEmail}, skipping promo code`)
+    if (alreadyHasPromo) {
+      logger.info(`[PROMO] Customer ${customerEmail} already has a MERCI promo code, skipping`)
       return null
     }
+    
+    logger.info(`[PROMO] No existing promo for ${customerEmail}, generating new code`)
     
     // Générer un code unique
     const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -42,14 +46,16 @@ async function generateFirstOrderPromoCode(
     
     logger.info(`[PROMO] Generating first order promo code: ${promoCode} for ${customerEmail}`)
     
-    // Créer la promotion via le module promotion
-    const promotionModuleService = container.resolve("promotion") as any
-    
     // Créer la promotion avec une règle de 10% de réduction
+    // On stocke l'email du client dans metadata pour éviter les doublons
     const promotion = await promotionModuleService.createPromotions({
       code: promoCode,
       type: "standard",
       is_automatic: false,
+      metadata: {
+        customer_email: customerEmail,
+        created_for_order: order.display_id || order.id,
+      },
       application_method: {
         type: "percentage",
         value: 10,
