@@ -3,6 +3,72 @@ import { OrderWorkflowEvents } from "@medusajs/utils"
 import { sendMailjetEmail } from "../lib/email/mailjet"
 import { sendOrderNotificationToSlack } from "../lib/slack/notifications"
 
+/**
+ * Auto-link une commande guest à un compte client existant si l'email correspond
+ */
+async function autoLinkOrderToCustomer(
+  container: any,
+  order: any,
+  logger: any
+): Promise<void> {
+  // Vérifier si la commande a déjà un customer_id (pas guest)
+  if (order.customer_id) {
+    logger.info(`[AUTO-LINK] Order ${order.display_id} already has customer_id, skipping`)
+    return
+  }
+
+  const orderEmail = order.email?.toLowerCase()
+  if (!orderEmail) {
+    logger.info(`[AUTO-LINK] Order ${order.display_id} has no email, skipping`)
+    return
+  }
+
+  logger.info(`[AUTO-LINK] Checking if account exists for email: ${orderEmail}`)
+
+  try {
+    const customerModuleService = container.resolve("customer") as any
+    
+    // Chercher un client avec cet email (insensible à la casse)
+    const customers = await customerModuleService.listCustomers(
+      { email: orderEmail },
+      { select: ["id", "email", "metadata"] }
+    )
+
+    // Vérifier aussi avec l'email original si différent
+    let matchingCustomer = customers?.find((c: any) => 
+      c.email?.toLowerCase() === orderEmail
+    )
+
+    if (!matchingCustomer && order.email !== orderEmail) {
+      const customers2 = await customerModuleService.listCustomers(
+        { email: order.email },
+        { select: ["id", "email", "metadata"] }
+      )
+      matchingCustomer = customers2?.find((c: any) => 
+        c.email?.toLowerCase() === orderEmail
+      )
+    }
+
+    if (!matchingCustomer) {
+      logger.info(`[AUTO-LINK] No account found for ${orderEmail}, order stays as guest`)
+      return
+    }
+
+    logger.info(`[AUTO-LINK] Found customer ${matchingCustomer.id} for email ${orderEmail}`)
+
+    // Lier la commande au client
+    const orderModuleService = container.resolve("order") as any
+    await orderModuleService.updateOrders(order.id, {
+      customer_id: matchingCustomer.id,
+    })
+
+    logger.info(`[AUTO-LINK] ✅ Order ${order.display_id} linked to customer ${matchingCustomer.id}`)
+
+  } catch (error: any) {
+    logger.error(`[AUTO-LINK] Error linking order: ${error?.message}`)
+  }
+}
+
 export const config = {
   event: [OrderWorkflowEvents.PLACED, OrderWorkflowEvents.COMPLETED],
 }
@@ -58,6 +124,15 @@ export default async function handleOrderEmails({ event, container }: Subscriber
 
     // Note: Medusa v2 copie automatiquement cart.metadata → order.metadata lors de cart.complete()
     // Aucune action manuelle n'est nécessaire, les order_notes sont déjà dans order.metadata
+
+    // AUTO-LINK: Si la commande est guest, vérifier si un compte existe avec cet email
+    if (event.name === OrderWorkflowEvents.PLACED) {
+      try {
+        await autoLinkOrderToCustomer(container, order, logger)
+      } catch (linkError: any) {
+        logger.error(`[ORDER-PLACED] Auto-link error: ${linkError?.message}`)
+      }
+    }
 
     // Debug: vérifier les items
     logger.info(`[DEBUG] Order items: ${JSON.stringify(order.items)}`)
