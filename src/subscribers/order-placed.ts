@@ -301,7 +301,7 @@ export default async function handleOrderEmails({ event, container }: Subscriber
             country: relayPoint.country,
           } : undefined,
           orderNotes: order.metadata?.order_notes,
-          orderUrl: `https://gomgom-bonbons.vercel.app/fr/print-label/${order.id}`,
+          orderUrl: `https://gomgombonbons.com/fr/print-label/${order.id}`,
         })
       } catch (slackError: any) {
         logger.error(`Erreur notification Slack: ${slackError?.message || slackError}`)

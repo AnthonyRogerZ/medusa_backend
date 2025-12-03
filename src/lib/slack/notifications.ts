@@ -208,7 +208,7 @@ function buildSlackMessage(data: OrderNotificationData) {
               text: '📦 Expédier',
               emoji: true,
             },
-            url: `https://gomgom-bonbons.vercel.app/fr/ship-order/${orderId}`,
+            url: `https://gomgombonbons.com/fr/ship-order/${orderId}`,
             style: 'primary',
           },
           ...(orderUrl ? [
