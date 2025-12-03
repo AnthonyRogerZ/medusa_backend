@@ -35,7 +35,7 @@ export default async function handleCustomerEmailVerification({ event, container
     return
   }
 
-  const frontendUrl = process.env.FRONTEND_URL || "https://gomgom-bonbons.vercel.app"
+  const frontendUrl = process.env.FRONTEND_URL || "https://gomgombonbons.com"
   const remoteQuery = container.resolve("remoteQuery") as any
   const customerModuleService = container.resolve("customer") as any
 

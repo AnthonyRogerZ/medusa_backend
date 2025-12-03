@@ -319,7 +319,7 @@ export default async function handleOrderEmails({ event, container }: Subscriber
 
       logger.info(`[ORDER-PLACED] Preparing email for ${to}`)
 
-      const orderUrl = `https://gomgom-bonbons.vercel.app/fr/account/orders`
+      const orderUrl = `https://gomgombonbons.com/fr/account/orders`
       const subject = event.name === OrderWorkflowEvents.COMPLETED ?
         `Votre commande #${order.display_id || order.id} est terminée` :
         `Confirmation de commande #${order.display_id || order.id}`

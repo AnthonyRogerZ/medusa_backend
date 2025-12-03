@@ -29,9 +29,9 @@ module.exports = defineConfig({
     // @ts-ignore - custom property for Upstash REST client
     redisRestToken: process.env.UPSTASH_REDIS_REST_TOKEN,
     http: {
-      storeCors: process.env.STORE_CORS || "https://gomgom-bonbons.vercel.app,http://localhost:3000,http://localhost:8000,http://127.0.0.1:3000",
-      adminCors: process.env.ADMIN_CORS || "https://medusabackend-production-e0e9.up.railway.app,http://localhost:3000,http://localhost:5173,http://localhost:9000,https://gomgom-bonbons.vercel.app,http://127.0.0.1:3000",
-      authCors: process.env.AUTH_CORS || "https://medusabackend-production-e0e9.up.railway.app,http://localhost:3000,http://localhost:5173,http://localhost:9000,https://gomgom-bonbons.vercel.app,http://127.0.0.1:3000",
+      storeCors: process.env.STORE_CORS || "https://gomgombonbons.com,http://localhost:3000,http://localhost:8000,http://127.0.0.1:3000",
+      adminCors: process.env.ADMIN_CORS || "https://medusabackend-production-e0e9.up.railway.app,http://localhost:3000,http://localhost:5173,http://localhost:9000,https://gomgombonbons.com,http://127.0.0.1:3000",
+      authCors: process.env.AUTH_CORS || "https://medusabackend-production-e0e9.up.railway.app,http://localhost:3000,http://localhost:5173,http://localhost:9000,https://gomgombonbons.com,http://127.0.0.1:3000",
       jwtSecret: process.env.JWT_SECRET || "supersecret",
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     }
@@ -101,6 +101,8 @@ module.exports = defineConfig({
             options: {
               apiKey: process.env.STRIPE_API_KEY,
               webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+              capture: true,
+              automatic_payment_methods: true,
             },
           },
         ],

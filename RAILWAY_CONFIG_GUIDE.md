@@ -6,9 +6,9 @@ Allez sur votre dashboard Railway et configurez ces variables d'environnement :
 
 ### 1. CORS Configuration
 ```
-STORE_CORS=https://gomgom-bonbons.vercel.app,http://localhost:3000
+STORE_CORS=https://gomgombonbons.com,http://localhost:3000
 ADMIN_CORS=https://medusabackend-production-e0e9.up.railway.app,http://localhost:5173,http://localhost:9000
-AUTH_CORS=https://medusabackend-production-e0e9.up.railway.app,https://gomgom-bonbons.vercel.app,http://localhost:5173,http://localhost:9000
+AUTH_CORS=https://medusabackend-production-e0e9.up.railway.app,https://gomgombonbons.com,http://localhost:5173,http://localhost:9000
 ```
 
 ### 2. Secrets de sécurité (CRITIQUES)

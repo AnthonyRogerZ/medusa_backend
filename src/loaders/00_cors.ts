@@ -3,7 +3,7 @@ import cors from "cors"
 // Early CORS loader: registers before anything else and short-circuits OPTIONS
 export default async function ({ app }: any) {
   const allowedOrigins = [
-    "https://gomgom-bonbons.vercel.app",
+    "https://gomgombonbons.com",
     "http://localhost:3000",
   ]
 

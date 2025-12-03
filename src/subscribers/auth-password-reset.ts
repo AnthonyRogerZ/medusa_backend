@@ -18,7 +18,7 @@ export default async function handleAuthPasswordReset({ event, container }: Subs
     return
   }
 
-  const frontendUrl = process.env.FRONTEND_URL || "https://gomgom-bonbons.vercel.app"
+  const frontendUrl = process.env.FRONTEND_URL || "https://gomgombonbons.com"
   const fromEmail = process.env.MAILJET_FROM_EMAIL
   if (!fromEmail) {
     logger.warn("MAILJET_FROM_EMAIL n'est pas défini. Envoi email réinitialisation ignoré.")

@@ -3,7 +3,7 @@ import cors from "cors"
 // Using a relaxed type to align with the runtime container shape that exposes `app`
 export default async function ({ app }: any) {
   const origins = [
-    "https://gomgom-bonbons.vercel.app",
+    "https://gomgombonbons.com",
     "http://localhost:3000",
   ]
 

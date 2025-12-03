@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express"
 
 const corsMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const allowedOrigins = [
-    "https://gomgom-bonbons.vercel.app",
     "https://gomgombonbons.com",
     "https://www.gomgombonbons.com",
     "https://medusabackend-production-e0e9.up.railway.app",
