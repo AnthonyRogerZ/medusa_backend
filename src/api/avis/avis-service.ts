@@ -40,8 +40,12 @@ async function ensureTable() {
   }
 }
 
+const logger = (globalThis as { medusaLogger?: { error: (message: string, error?: unknown) => void } }).medusaLogger ?? {
+  error: (message: string, error?: unknown) => console.error(message, error),
+}
+
 // Initialiser la table au démarrage
-ensureTable().catch(console.error)
+ensureTable().catch((error) => logger.error("Erreur ensureTable:", error))
 
 // Récupérer tous les avis
 export async function getAvisFromDB(): Promise<Avis[]> {
@@ -79,7 +83,7 @@ export async function saveAvisToDB(avis: Avis): Promise<boolean> {
     ])
     return true
   } catch (error) {
-    console.error("Erreur saveAvisToDB:", error)
+    logger.error("Erreur saveAvisToDB:", error)
     return false
   } finally {
     client.release()
@@ -114,7 +118,7 @@ export async function updateAvisInDB(id: string, updates: Partial<Avis>): Promis
 
     return result.rowCount !== null && result.rowCount > 0
   } catch (error) {
-    console.error("Erreur updateAvisInDB:", error)
+    logger.error("Erreur updateAvisInDB:", error)
     return false
   } finally {
     client.release()
@@ -130,7 +134,7 @@ export async function deleteAvisFromDB(id: string): Promise<boolean> {
     `, [id])
     return result.rowCount !== null && result.rowCount > 0
   } catch (error) {
-    console.error("Erreur deleteAvisFromDB:", error)
+    logger.error("Erreur deleteAvisFromDB:", error)
     return false
   } finally {
     client.release()

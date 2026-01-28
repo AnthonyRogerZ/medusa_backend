@@ -4,6 +4,7 @@ import { getAvisFromDB, saveAvisToDB, Avis } from "./avis-service"
 // GET /store/avis - Récupérer les avis
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   try {
+    const logger = req.scope.resolve("logger") as { info: (m: string) => void; error: (m: string, e?: unknown) => void }
     const showAll = req.query.all === "true"
     const avis = await getAvisFromDB()
     
@@ -15,7 +16,8 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       published: avis.filter(a => a.published).length,
     })
   } catch (error) {
-    console.error("❌ Erreur GET /store/avis:", error)
+    const logger = req.scope.resolve("logger") as { error: (m: string, e?: unknown) => void }
+    logger.error("❌ Erreur GET /store/avis:", error)
     res.status(500).json({ error: "Erreur serveur" })
   }
 }
@@ -23,6 +25,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 // POST /store/avis - Créer un nouvel avis
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   try {
+    const logger = req.scope.resolve("logger") as { info: (m: string) => void; error: (m: string, e?: unknown) => void }
     const avis = req.body as Avis
     
     if (!avis.id || !avis.name || !avis.email || !avis.message) {
@@ -32,13 +35,14 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     const saved = await saveAvisToDB(avis)
     
     if (saved) {
-      console.log(`📝 Nouvel avis: ${avis.name} (${avis.email}) - ${avis.rating}/5`)
+      logger.info(`📝 Nouvel avis: ${avis.name} (${avis.email}) - ${avis.rating}/5`)
       res.json({ success: true, avis })
     } else {
       res.status(500).json({ error: "Erreur lors de la sauvegarde" })
     }
   } catch (error) {
-    console.error("❌ Erreur POST /store/avis:", error)
+    const logger = req.scope.resolve("logger") as { error: (m: string, e?: unknown) => void }
+    logger.error("❌ Erreur POST /store/avis:", error)
     res.status(500).json({ error: "Erreur serveur" })
   }
 }

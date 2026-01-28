@@ -53,8 +53,6 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       })
     }
 
-    console.log("Auth identity récupérée:", JSON.stringify(authIdentity, null, 2))
-
     // Extraire l'email depuis les métadonnées (différents emplacements possibles)
     const email = authIdentity.provider_metadata?.email 
       || authIdentity.user_metadata?.email
@@ -72,7 +70,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       raw: authIdentity,
     })
   } catch (error: any) {
-    console.error("Erreur récupération auth_identity:", error)
+    const logger = req.scope.resolve("logger") as { error: (message: string, error?: unknown) => void }
+    logger.error("Erreur récupération auth_identity:", error)
     return res.status(500).json({ 
       error: "Erreur serveur",
       message: error.message 

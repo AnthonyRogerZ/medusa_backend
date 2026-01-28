@@ -41,6 +41,12 @@ interface OrderNotificationData {
   orderUrl?: string
 }
 
+const logger = (globalThis as { medusaLogger?: { info: (message: string) => void; warn: (message: string) => void; error: (message: string, error?: unknown) => void } }).medusaLogger ?? {
+  info: (message: string) => console.log(message),
+  warn: (message: string) => console.warn(message),
+  error: (message: string, error?: unknown) => console.error(message, error),
+}
+
 /**
  * Formate le montant en euros
  * Medusa v2 stocke les montants déjà en euros (pas en centimes)
@@ -244,7 +250,7 @@ export async function sendOrderNotificationToSlack(data: OrderNotificationData):
   const webhookUrl = process.env.SLACK_WEBHOOK_URL
 
   if (!webhookUrl) {
-    console.warn('⚠️ [SLACK] SLACK_WEBHOOK_URL non configuré, notification ignorée')
+    logger.warn('⚠️ [SLACK] SLACK_WEBHOOK_URL non configuré, notification ignorée')
     return
   }
 
@@ -264,9 +270,10 @@ export async function sendOrderNotificationToSlack(data: OrderNotificationData):
       throw new Error(`Slack API error: ${response.status} - ${errorText}`)
     }
 
-    console.log(`✅ [SLACK] Notification envoyée pour commande #${data.displayId}`)
-  } catch (error: any) {
-    console.error(`❌ [SLACK] Erreur envoi notification:`, error?.message || error)
+    logger.info(`✅ [SLACK] Notification envoyée pour commande #${data.displayId}`)
+  } catch (error) {
+    const err = error as Error | undefined
+    logger.error(`❌ [SLACK] Erreur envoi notification: ${err?.message || "unknown"}`)
     // Ne pas bloquer le flux si Slack échoue
   }
 }

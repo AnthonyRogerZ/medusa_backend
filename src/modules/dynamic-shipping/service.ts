@@ -2,7 +2,8 @@ import { AbstractFulfillmentProviderService } from "@medusajs/framework/utils"
 import {
   CalculateShippingOptionPriceDTO,
   CalculatedShippingOptionPrice,
-  FulfillmentOption
+  FulfillmentOption,
+  CreateShippingOptionDTO
 } from "@medusajs/framework/types"
 
 type ShippingRates = {
@@ -12,6 +13,26 @@ type ShippingRates = {
       freeShippingThreshold?: number;
     };
   };
+}
+
+type CartItem = {
+  title?: string
+  quantity?: number
+  variant?: { weight?: number }
+}
+
+type ShippingContext = Omit<
+  CalculateShippingOptionPriceDTO["context"],
+  "items" | "shipping_address" | "cart"
+> & {
+  items?: CartItem[]
+  shipping_address?: { country_code?: string }
+  cart?: { total?: number }
+}
+
+const logger = (globalThis as { medusaLogger?: { info: (...args: unknown[]) => void; error: (message: string, error?: unknown) => void } }).medusaLogger ?? {
+  info: (...args: unknown[]) => console.log(...args),
+  error: (message: string, error?: unknown) => console.error(message, error),
 }
 
 // GRILLE TARIFAIRE COMPLÈTE (codes pays en minuscules)
@@ -131,7 +152,7 @@ const SHIPPING_RATES: ShippingRates = {
 class DynamicShippingService extends AbstractFulfillmentProviderService {
   static identifier = "dynamic-shipping"
 
-  constructor(container: any, options?: Record<string, unknown>) {
+  constructor(container: unknown, options?: Record<string, unknown>) {
     // @ts-ignore
     super()
   }
@@ -148,15 +169,15 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
     optionData: Record<string, unknown>,
     data: Record<string, unknown>,
     context: Record<string, unknown>
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     return data
   }
 
-  async validateOption(data: Record<string, any>): Promise<boolean> {
+  async validateOption(data: Record<string, unknown>): Promise<boolean> {
     return true
   }
 
-  async canCalculate(data: any): Promise<boolean> {
+  async canCalculate(data: CreateShippingOptionDTO): Promise<boolean> {
     return true
   }
 
@@ -166,33 +187,41 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
     context: CalculateShippingOptionPriceDTO["context"]
   ): Promise<CalculatedShippingOptionPrice> {
     try {
-      console.log("🚚 [Dynamic Shipping] calculatePrice called")
-      console.log("📦 optionData:", JSON.stringify(optionData, null, 2))
-      console.log("📦 data:", JSON.stringify(data, null, 2))
-      console.log("📦 context:", JSON.stringify(context, null, 2))
+      const debug = process.env.DEBUG_SHIPPING === "true"
+      const log = (...args: unknown[]) => {
+        if (debug) {
+          logger.info(...args)
+        }
+      }
+
+      log("🚚 [Dynamic Shipping] calculatePrice called")
+      log("📦 optionData:", JSON.stringify(optionData, null, 2))
+      log("📦 data:", JSON.stringify(data, null, 2))
+      log("📦 context:", JSON.stringify(context, null, 2))
 
       // 1. Récupérer les items du cart
-      const items = context.items || []
-      console.log(`📦 Nombre d'items: ${items.length}`)
+      const typedContext = context as ShippingContext
+      const items = Array.isArray(typedContext.items) ? typedContext.items : []
+      log(`📦 Nombre d'items: ${items.length}`)
       
       // 2. Calculer le poids total (en kg)
       // Note: Medusa stocke le poids en GRAMMES dans la DB
-      const totalWeight = items.reduce((sum: number, item: any) => {
+      const totalWeight = items.reduce<number>((sum, item: CartItem) => {
         const weightInGrams = item.variant?.weight || 100 // 100g par défaut
         const weightInKg = weightInGrams / 1000 // Conversion grammes → kg
-        console.log(`  - Item: ${item.title || 'Unknown'}, weight: ${weightInGrams}g (${weightInKg}kg), qty: ${item.quantity}`)
-        return sum + (weightInKg * Number(item.quantity))
+        log(`  - Item: ${item.title || 'Unknown'}, weight: ${weightInGrams}g (${weightInKg}kg), qty: ${item.quantity}`)
+        return sum + (weightInKg * Number(item.quantity || 0))
       }, 0)
 
-      console.log(`⚖️ Poids total: ${totalWeight}kg`)
+      log(`⚖️ Poids total: ${totalWeight}kg`)
 
       // 3. Récupérer le pays de livraison (en minuscules)
-      const countryCode = (context.shipping_address?.country_code || "fr").toLowerCase()
-      console.log(`🌍 Pays: ${countryCode}`)
+      const countryCode = (typedContext.shipping_address?.country_code || "fr").toLowerCase()
+      log(`🌍 Pays: ${countryCode}`)
 
       // 4. Déterminer le transporteur depuis l'ID de l'option
       const optionId = String(optionData.id || "").toLowerCase()
-      console.log(`📝 Option ID: "${optionId}"`)
+      log(`📝 Option ID: "${optionId}"`)
       let carrier = "mondial-relay"
       
       if (optionId.includes("colissimo")) {
@@ -203,12 +232,12 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
         carrier = "mondial-relay"
       }
 
-      console.log(`🚛 Transporteur détecté: ${carrier}`)
+      log(`🚛 Transporteur détecté: ${carrier}`)
 
       // 5. Récupérer les tarifs pour ce transporteur et ce pays
       const carrierRates = SHIPPING_RATES[carrier]
       if (!carrierRates) {
-        console.error(`❌ Pas de tarifs pour ${carrier}`)
+        logger.error(`❌ Pas de tarifs pour ${carrier}`)
         return {
           calculated_amount: 9.99,
           is_calculated_price_tax_inclusive: false,
@@ -217,7 +246,7 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
 
       const countryRates = carrierRates[countryCode] || carrierRates["default"]
       if (!countryRates) {
-        console.error(`❌ Pas de tarifs pour ${carrier} vers ${countryCode}`)
+        logger.error(`❌ Pas de tarifs pour ${carrier} vers ${countryCode}`)
         return {
           calculated_amount: 9.99,
           is_calculated_price_tax_inclusive: false,
@@ -230,8 +259,8 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
       )
 
       if (!bracket) {
-        console.error(`❌ Poids ${totalWeight}kg hors limites pour ${carrier} (max: 10kg)`)
-        console.log(`⚠️ Commande trop lourde, ce transporteur ne sera pas disponible`)
+        logger.error(`❌ Poids ${totalWeight}kg hors limites pour ${carrier} (max: 10kg)`)
+        log(`⚠️ Commande trop lourde, ce transporteur ne sera pas disponible`)
         // Retourner null pour que cette option n'apparaisse pas du tout
         throw new Error(`Poids ${totalWeight}kg trop élevé pour ${carrier} (max: 10kg)`)
       }
@@ -240,17 +269,17 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
 
       // 7. Vérifier la livraison gratuite (Mondial Relay France uniquement)
       if (countryRates.freeShippingThreshold) {
-        const cartTotal = (context.cart as any)?.total || 0
-        console.log(`💰 Total panier: ${cartTotal} centimes (${cartTotal/100}€), Seuil: ${countryRates.freeShippingThreshold} centimes`)
+        const cartTotal = typedContext.cart?.total || 0
+        log(`💰 Total panier: ${cartTotal} centimes (${cartTotal/100}€), Seuil: ${countryRates.freeShippingThreshold} centimes`)
         if (cartTotal >= countryRates.freeShippingThreshold) {
           finalPrice = 0
-          console.log(`🎁 Livraison gratuite! (total: ${cartTotal/100}€)`)
+          log(`🎁 Livraison gratuite! (total: ${cartTotal/100}€)`)
         }
       }
 
       // Convertir en euros avec décimales (au lieu de centimes)
       const priceInEuros = finalPrice / 100
-      console.log(`💰 Prix calculé: ${priceInEuros}€`)
+      log(`💰 Prix calculé: ${priceInEuros}€`)
 
       return {
         calculated_amount: priceInEuros,
@@ -258,7 +287,8 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
       }
 
     } catch (error) {
-      console.error("❌ Erreur dans calculatePrice:", error)
+      const err = error as Error | undefined
+      logger.error("❌ Erreur dans calculatePrice:", err?.message || err)
       return {
         calculated_amount: 9.99,
         is_calculated_price_tax_inclusive: false,
