@@ -1,6 +1,6 @@
 import type { SubscriberArgs } from "@medusajs/framework"
 import { AuthWorkflowEvents } from "@medusajs/utils"
-import { sendMailjetEmail } from "../lib/email/mailjet"
+import { sendResendEmail } from "../lib/email/resend"
 
 export const config = {
   event: AuthWorkflowEvents.PASSWORD_RESET,
@@ -19,9 +19,9 @@ export default async function handleAuthPasswordReset({ event, container }: Subs
   }
 
   const frontendUrl = process.env.FRONTEND_URL || "https://gomgombonbons.com"
-  const fromEmail = process.env.MAILJET_FROM_EMAIL
+  const fromEmail = process.env.RESEND_FROM_EMAIL
   if (!fromEmail) {
-    logger.warn("MAILJET_FROM_EMAIL n'est pas défini. Envoi email réinitialisation ignoré.")
+    logger.warn("RESEND_FROM_EMAIL n'est pas défini. Envoi email réinitialisation ignoré.")
     return
   }
 
@@ -62,7 +62,7 @@ export default async function handleAuthPasswordReset({ event, container }: Subs
   const subject = actor_type === "user" ? "Réinitialisation du mot de passe (Admin)" : "Réinitialisation de votre mot de passe"
 
   try {
-    await sendMailjetEmail({
+    await sendResendEmail({
       to,
       subject,
       text: `Bonjour,\n\nPour réinitialiser votre mot de passe, cliquez sur le lien suivant : ${resetUrl}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet email.`,

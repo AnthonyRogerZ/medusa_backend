@@ -1,6 +1,6 @@
 import type { SubscriberArgs } from "@medusajs/framework"
 import { CustomerWorkflowEvents } from "@medusajs/utils"
-import { sendMailjetEmail } from "../lib/email/mailjet"
+import { sendResendEmail } from "../lib/email/resend"
 import { generateVerificationToken, hashToken } from "../lib/email-verification"
 
 export const config = {
@@ -29,9 +29,9 @@ export default async function handleCustomerEmailVerification({ event, container
     return
   }
 
-  const fromEmail = process.env.MAILJET_FROM_EMAIL
+  const fromEmail = process.env.RESEND_FROM_EMAIL
   if (!fromEmail) {
-    logger.warn("[EMAIL-VERIFICATION] MAILJET_FROM_EMAIL not configured, skipping verification email")
+    logger.warn("[EMAIL-VERIFICATION] RESEND_FROM_EMAIL not configured, skipping verification email")
     return
   }
 
@@ -86,7 +86,7 @@ export default async function handleCustomerEmailVerification({ event, container
       const verificationUrl = `${frontendUrl}/verify-email?token=${encodeURIComponent(token)}&customer_id=${encodeURIComponent(customerId)}`
 
       // 5. Envoyer l'email de vérification
-      await sendMailjetEmail({
+      await sendResendEmail({
         to: email,
         subject: "Vérifiez votre adresse email - GomGom Bonbons",
         html: `

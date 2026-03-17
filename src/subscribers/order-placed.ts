@@ -1,6 +1,6 @@
 import type { SubscriberArgs } from "@medusajs/framework"
 import { OrderWorkflowEvents } from "@medusajs/utils"
-import { sendMailjetEmail } from "../lib/email/mailjet"
+import { sendResendEmail } from "../lib/email/resend"
 import { sendOrderNotificationToSlack } from "../lib/slack/notifications"
 
 type Logger = {
@@ -529,8 +529,8 @@ export default async function handleOrderEmails({ event, container }: Subscriber
   const logger = container.resolve<Logger>("logger")
   const remoteQuery = container.resolve<RemoteQuery>("remoteQuery")
 
-  if (!process.env.MAILJET_FROM_EMAIL) {
-    logger.warn("MAILJET_FROM_EMAIL n'est pas défini. Envoi email commande ignoré.")
+  if (!process.env.RESEND_FROM_EMAIL) {
+    logger.warn("RESEND_FROM_EMAIL n'est pas défini. Envoi email commande ignoré.")
     return
   }
 
@@ -675,7 +675,7 @@ export default async function handleOrderEmails({ event, container }: Subscriber
         orderUrl,
       })
 
-      await sendMailjetEmail({ to, subject, html, text })
+      await sendResendEmail({ to, subject, html, text })
       logger.info(`[ORDER-PLACED] Email sent successfully to ${to}`)
     } catch (emailError) {
       const err = emailError as Error | undefined
