@@ -22,10 +22,13 @@ const buildVerificationEmailHtml = (firstName: string, verificationUrl: string) 
           
           <!-- Header -->
           <tr>
-            <td style="background:linear-gradient(135deg,#FF6B9D 0%,#FF9EBB 50%,#C8F0E8 100%);padding:40px 32px;text-align:center;">
-              <div style="font-size:42px;margin-bottom:8px;">🍬</div>
-              <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;text-shadow:0 1px 3px rgba(0,0,0,0.1);">GomGom Bonbons</h1>
-              <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.85);letter-spacing:1.5px;text-transform:uppercase;font-weight:500;">Bonbons Halal Premium</p>
+            <td style="background:linear-gradient(135deg,#FF6B9D 0%,#FF9EBB 50%,#C8F0E8 100%);padding:36px 32px 28px;text-align:center;">
+              <img src="https://gomgombonbons.com/images/transparent.png"
+                   alt="GomGom Bonbons"
+                   width="110" height="110"
+                   style="width:110px;height:110px;border-radius:50%;object-fit:contain;background:#ffffff;padding:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;" />
+              <h1 style="margin:0;font-size:24px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;text-shadow:0 1px 3px rgba(0,0,0,0.1);">GomGom'bonbons</h1>
+              <p style="margin:6px 0 0;font-size:12px;color:rgba(255,255,255,0.85);letter-spacing:1.5px;text-transform:uppercase;font-weight:500;">Bonbons Halal Premium</p>
             </td>
           </tr>
 
