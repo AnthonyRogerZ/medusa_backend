@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { sendMailjetEmail } from "../../../../lib/email/mailjet"
+import { sendResendEmail } from "../../../../lib/email/resend"
 import { generateVerificationToken, hashToken } from "../../../../lib/email-verification"
 
 /**
@@ -22,7 +22,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       })
     }
 
-    const fromEmail = process.env.MAILJET_FROM_EMAIL
+    const fromEmail = process.env.RESEND_FROM_EMAIL
     if (!fromEmail) {
       return res.status(500).json({
         success: false,
@@ -81,7 +81,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     const verificationUrl = `${frontendUrl}/verify-email?token=${encodeURIComponent(token)}&customer_id=${encodeURIComponent(customer_id)}`
 
     // Envoyer l'email
-    await sendMailjetEmail({
+    await sendResendEmail({
       to: email,
       subject: "Vérifiez votre adresse email - GomGom Bonbons",
       html: `

@@ -7,82 +7,71 @@ export const config = {
   event: CustomerWorkflowEvents.CREATED,
 }
 
+// ─── LE NOUVEAU TEMPLATE EMAIL AVEC LOGO & COULEURS CLIENT ───
 const buildVerificationEmailHtml = (firstName: string, verificationUrl: string) => `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vérifiez votre email - GomGom Bonbons</title>
+  <title>Bienvenue chez GomGom</title>
 </head>
-<body style="margin:0;padding:0;background-color:#FFF5F8;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFF5F8;padding:40px 20px;">
+<body style="margin:0;padding:0;background-color:#FAFAFA;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAFAFA;padding:40px 20px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:24px;border:1px solid #F3F4F6;overflow:hidden;">
           
-          <!-- Header -->
           <tr>
-            <td style="background:linear-gradient(135deg,#FF6B9D 0%,#FF9EBB 50%,#C8F0E8 100%);padding:36px 32px 28px;text-align:center;">
-              <img src="https://gomgombonbons.com/images/transparent.png"
-                   alt="GomGom Bonbons"
-                   width="110" height="110"
-                   style="width:110px;height:110px;border-radius:50%;object-fit:contain;background:#ffffff;padding:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;" />
-              <h1 style="margin:0;font-size:24px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;text-shadow:0 1px 3px rgba(0,0,0,0.1);">GomGom'bonbons</h1>
-              <p style="margin:6px 0 0;font-size:12px;color:rgba(255,255,255,0.85);letter-spacing:1.5px;text-transform:uppercase;font-weight:500;">Bonbons Halal Premium</p>
+            <td align="center" style="padding:48px 40px 32px;">
+              <a href="https://gomgombonbons.com" style="display:block;margin:0 auto 20px;width:90px;">
+                <img src="https://gomgombonbons.com/images/transparent.png"
+                     alt="GomGom Bonbons"
+                     width="90" height="90"
+                     style="width:90px;height:90px;border-radius:50%;object-fit:contain;display:block;" />
+              </a>
+              
+              <span style="display:inline-block;padding:6px 16px;border-radius:50px;background-color:#89E1DD;color:#0f5150;font-size:10px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px;">
+                L'Excellence GomGom
+              </span>
+              
+              <h1 style="margin:0;font-family:Georgia, 'Times New Roman', serif;font-size:36px;font-style:italic;color:#9f1239;font-weight:normal;letter-spacing:0.5px;">
+                Bienvenue.
+              </h1>
             </td>
           </tr>
 
-          <!-- Body -->
           <tr>
-            <td style="padding:40px 40px 32px;">
-              <h2 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1A1A2E;">Bienvenue, ${firstName} ! 🎉</h2>
-              <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#555;">
-                Merci de rejoindre la famille GomGom Bonbons. Votre compte a bien été créé — il ne reste plus qu'une petite étape pour l'activer.
-              </p>
-              <p style="margin:0 0 32px;font-size:15px;line-height:1.7;color:#555;">
-                Cliquez sur le bouton ci-dessous pour vérifier votre adresse email et accéder à toutes les douceurs de votre espace personnel 🍭
+            <td style="padding:0 48px 40px;text-align:center;">
+              <h2 style="margin:0 0 16px;font-size:18px;font-weight:600;color:#111827;">Bonjour ${firstName},</h2>
+              
+              <p style="margin:0 0 32px;font-size:15px;line-height:1.6;color:#4B5563;">
+                Nous sommes ravis de vous compter parmi nos clients privilégiés. Avant de pouvoir accéder à votre espace personnel et retrouver vos favoris, il ne reste qu'une petite étape pour confirmer votre adresse email.
               </p>
 
-              <!-- CTA Button -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding:8px 0 36px;">
                     <a href="${verificationUrl}"
-                       style="display:inline-block;background:linear-gradient(135deg,#FF6B9D,#FF3D7F);color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:16px 48px;border-radius:50px;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(255,61,127,0.35);">
-                      ✅ Vérifier mon adresse email
+                       style="display:inline-block;background-color:#FFE1EA;color:#9f1239;font-size:14px;font-weight:bold;text-decoration:none;padding:16px 40px;border-radius:50px;">
+                      Confirmer mon compte
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <!-- Info box -->
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="background:#FFF5F8;border-left:4px solid #FF6B9D;border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:24px;">
-                    <p style="margin:0;font-size:13px;color:#888;line-height:1.6;">
-                      ⏱ Ce lien est valable <strong style="color:#FF6B9D;">24 heures</strong>.<br>
-                      Si vous n'avez pas créé de compte, ignorez simplement cet email.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin:24px 0 0;font-size:13px;color:#bbb;word-break:break-all;">
-                Lien alternatif : <a href="${verificationUrl}" style="color:#FF6B9D;">${verificationUrl}</a>
+              <p style="margin:0;font-size:13px;color:#9CA3AF;line-height:1.5;">
+                Ce lien est valable, par mesure de sécurité, pendant 24 heures.<br>
+                Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.
               </p>
             </td>
           </tr>
 
-          <!-- Footer -->
           <tr>
-            <td style="background:#FAFAFA;border-top:1px solid #F0F0F0;padding:24px 40px;text-align:center;">
-              <div style="margin-bottom:12px;">
-                <span style="display:inline-block;background:#FFF5F8;border-radius:20px;padding:6px 14px;font-size:12px;color:#FF6B9D;font-weight:600;margin:0 4px;">🟢 100% Halal</span>
-                <span style="display:inline-block;background:#F0FBF8;border-radius:20px;padding:6px 14px;font-size:12px;color:#2EAF8B;font-weight:600;margin:0 4px;">✨ +100 variétés</span>
-                <span style="display:inline-block;background:#FFF5F8;border-radius:20px;padding:6px 14px;font-size:12px;color:#FF6B9D;font-weight:600;margin:0 4px;">🚀 Envoi 48h</span>
-              </div>
-              <p style="margin:8px 0 0;font-size:12px;color:#bbb;">
-                © 2026 GomGom Bonbons — <a href="https://gomgombonbons.com" style="color:#FF6B9D;text-decoration:none;">gomgombonbons.com</a>
+            <td style="background-color:#F9FAFB;border-top:1px solid #F3F4F6;padding:32px 48px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#9CA3AF;line-height:1.6;">
+                © ${new Date().getFullYear()} GomGom Bonbons<br>
+                L'art d'offrir la gourmandise.<br><br>
+                <a href="https://gomgombonbons.com" style="color:#0f5150;text-decoration:none;font-weight:500;">gomgombonbons.com</a>
               </p>
             </td>
           </tr>
@@ -94,6 +83,7 @@ const buildVerificationEmailHtml = (firstName: string, verificationUrl: string) 
 </body>
 </html>`
 
+// ─── LOGIQUE MEDUSA (Inchangée) ───
 export default async function handleCustomerEmailVerification({ event, container }: SubscriberArgs) {
   const logger = container.resolve("logger") as {
     info: (m: string) => void
@@ -160,11 +150,12 @@ export default async function handleCustomerEmailVerification({ event, container
 
       const verificationUrl = `${frontendUrl}/verify-email?token=${encodeURIComponent(token)}&customer_id=${encodeURIComponent(customerId)}`
 
+      // Envoi de l'email via Resend
       await sendResendEmail({
         to: email,
-        subject: "Vérifiez votre adresse email 🍬 GomGom Bonbons",
+        subject: "Bienvenue chez GomGom — Confirmez votre adresse email",
         html: buildVerificationEmailHtml(firstName, verificationUrl),
-        text: `Bonjour ${firstName},\n\nMerci de rejoindre GomGom Bonbons !\n\nPour vérifier votre adresse email, cliquez sur ce lien :\n${verificationUrl}\n\nCe lien est valable 24 heures.\n\nSi vous n'avez pas créé de compte, ignorez cet email.\n\nL'équipe GomGom Bonbons 🍬`,
+        text: `Bonjour ${firstName},\n\nNous sommes ravis de vous compter parmi nos clients privilégiés. Pour confirmer votre adresse email, veuillez copier ce lien dans votre navigateur :\n${verificationUrl}\n\nCe lien est valable 24 heures.\n\nL'équipe GomGom.`,
       })
 
       logger.info(`[EMAIL-VERIFICATION] Verification email sent to ${email} for customer ${customerId}`)

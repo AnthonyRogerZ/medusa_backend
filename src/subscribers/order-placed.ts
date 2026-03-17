@@ -3,6 +3,7 @@ import { OrderWorkflowEvents } from "@medusajs/utils"
 import { sendResendEmail } from "../lib/email/resend"
 import { sendOrderNotificationToSlack } from "../lib/slack/notifications"
 
+// ─── TYPES ─── (Inchangés)
 type Logger = {
   info: (message: string) => void
   warn: (message: string) => void
@@ -95,6 +96,7 @@ type EmailTemplateInput = {
   orderUrl: string
 }
 
+// ─── HELPERS ───
 const formatAmount = (amount?: number, currency?: string) => {
   try {
     return new Intl.NumberFormat("fr-FR", {
@@ -106,16 +108,18 @@ const formatAmount = (amount?: number, currency?: string) => {
   }
 }
 
+// ─── FONCTIONS DE RENDU HTML (REFONTE DESIGN) ───
+
 const buildOrderLines = (items: OrderItem[], currency: string) =>
   items
     .map(
       (it) => `
-        <tr style="border-bottom: 1px solid #eee;">
-          <td style="padding: 15px 10px;">
-            <div style="font-weight: 500; color: #000;">${it.title}</div>
-            <div style="font-size: 13px; color: #666;">Quantité: ${it.quantity}</div>
+        <tr>
+          <td style="padding: 16px 0; border-bottom: 1px solid #F3F4F6;">
+            <div style="font-weight: 600; color: #111827; font-size: 14px;">${it.title}</div>
+            <div style="font-size: 13px; color: #6B7280; margin-top: 4px;">Quantité : ${it.quantity}</div>
           </td>
-          <td style="padding: 15px 10px; text-align: right; font-weight: 500; color: #000;">
+          <td style="padding: 16px 0; text-align: right; border-bottom: 1px solid #F3F4F6; font-weight: 600; color: #111827; font-size: 14px;">
             ${formatAmount(it.total, currency)}
           </td>
         </tr>`
@@ -134,14 +138,14 @@ const buildAddressHtml = (
 
   if (isRelayPoint && relayPoint) {
     return `
-      <div style="background: ${isChronopost ? "#e3f2fd" : "#fff5e6"}; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid ${isChronopost ? "#1976d2" : "#ff9800"};">
-        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: ${isChronopost ? "#1565c0" : "#e65100"};">${isChronopost ? "⚡" : "📮"} Point ${isChronopost ? "Chronopost" : "Relais"} de livraison</h3>
-        <p style="margin: 5px 0; color: #333; line-height: 1.6;">
-          <strong style="color: ${isChronopost ? "#1565c0" : "#e65100"};">${relayPoint.name}</strong><br>
+      <div style="background-color: #FAFAFA; border-radius: 16px; padding: 24px; margin-top: 32px; border: 1px solid #F3F4F6;">
+        <h3 style="margin: 0 0 16px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #4B5563;">Point de livraison</h3>
+        <p style="margin: 0; color: #111827; line-height: 1.6; font-size: 14px;">
+          <strong style="color: #0f5150;">${relayPoint.name}</strong><br>
           ${relayPoint.address}<br>
           ${relayPoint.postalCode} ${relayPoint.city}
         </p>
-        ${shippingAddr?.phone ? `<p style="margin: 10px 0 0 0; color: #666;">📞 ${shippingAddr.phone}</p>` : ""}
+        ${shippingAddr?.phone ? `<p style="margin: 12px 0 0 0; color: #6B7280; font-size: 13px;">Tél : ${shippingAddr.phone}</p>` : ""}
       </div>
     `
   }
@@ -151,16 +155,16 @@ const buildAddressHtml = (
   }
 
   return `
-      <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
-        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #000;">📍 Adresse de livraison</h3>
-        <p style="margin: 5px 0; color: #333; line-height: 1.6;">
+      <div style="background-color: #FAFAFA; border-radius: 16px; padding: 24px; margin-top: 32px; border: 1px solid #F3F4F6;">
+        <h3 style="margin: 0 0 16px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #4B5563;">Adresse de livraison</h3>
+        <p style="margin: 0; color: #111827; line-height: 1.6; font-size: 14px;">
           <strong>${shippingAddr.first_name} ${shippingAddr.last_name}</strong><br>
           ${shippingAddr.address_1}<br>
           ${shippingAddr.address_2 ? `${shippingAddr.address_2}<br>` : ""}
           ${shippingAddr.postal_code} ${shippingAddr.city}<br>
           ${shippingAddr.province ? `${shippingAddr.province}<br>` : ""}
-          ${shippingAddr.phone ? `📞 ${shippingAddr.phone}` : ""}
         </p>
+        ${shippingAddr?.phone ? `<p style="margin: 12px 0 0 0; color: #6B7280; font-size: 13px;">Tél : ${shippingAddr.phone}</p>` : ""}
       </div>
   `
 }
@@ -168,17 +172,16 @@ const buildAddressHtml = (
 const buildOrderNotesHtml = (notes?: string) =>
   notes
     ? `
-      <div style="background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; padding: 15px; margin: 25px 0;">
-        <p style="margin: 0 0 8px 0; font-weight: bold; color: #856404; font-size: 14px;">
-          📝 Instructions spéciales
-        </p>
-        <p style="margin: 0; color: #856404; line-height: 1.6;">
+      <div style="background-color: #FEF3C7; border-radius: 16px; padding: 24px; margin-bottom: 32px;">
+        <h3 style="margin: 0 0 8px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #92400E;">Instructions spéciales</h3>
+        <p style="margin: 0; color: #92400E; line-height: 1.6; font-size: 14px;">
           ${String(notes).replace(/\n/g, "<br>")}
         </p>
       </div>
       `
     : ""
 
+// ─── TEMPLATE HTML PRINCIPAL ───
 const buildOrderEmailHtml = ({ order, firstOrderPromoCode, orderUrl }: EmailTemplateInput) => {
   const shippingAddr = order.shipping_address
   const relayPoint = order.metadata?.relay_point
@@ -193,124 +196,108 @@ const buildOrderEmailHtml = ({ order, firstOrderPromoCode, orderUrl }: EmailTemp
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Commande confirmée - GomGom Bonbons</title>
 </head>
-<body style="margin:0;padding:0;background-color:#FFF5F8;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFF5F8;padding:40px 20px;">
+<body style="margin:0;padding:0;background-color:#FAFAFA;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAFAFA;padding:40px 20px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
-
-          <!-- Header -->
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:24px;border:1px solid #F3F4F6;overflow:hidden;">
+          
           <tr>
-            <td style="background:linear-gradient(135deg,#FF6B9D 0%,#FF9EBB 50%,#C8F0E8 100%);padding:36px 32px 28px;text-align:center;">
-              <img src="https://gomgombonbons.com/images/transparent.png"
-                   alt="GomGom Bonbons"
-                   width="110" height="110"
-                   style="width:110px;height:110px;border-radius:50%;object-fit:contain;background:#ffffff;padding:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;" />
-              <h1 style="margin:0;font-size:24px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;text-shadow:0 1px 3px rgba(0,0,0,0.1);">GomGom'bonbons</h1>
-              <p style="margin:6px 0 0;font-size:12px;color:rgba(255,255,255,0.85);letter-spacing:1.5px;text-transform:uppercase;font-weight:500;">Bonbons Halal Premium</p>
+            <td align="center" style="padding:48px 40px 16px;">
+              
+              <a href="https://gomgombonbons.com" style="display:block;margin:0 auto 24px;width:100px;">
+                <img src="https://gomgombonbons.com/images/transparent.png"
+                     alt="GomGom Bonbons"
+                     width="100" height="100"
+                     style="width:100px;height:100px;border-radius:50%;object-fit:contain;background:#ffffff;padding:8px;box-shadow:0 4px 20px rgba(0,0,0,0.06);display:block;" />
+              </a>
+
+              <span style="display:inline-block;padding:6px 16px;border-radius:50px;background-color:#89E1DD;color:#0f5150;font-size:10px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px;">
+                Commande #${order.display_id || order.id}
+              </span>
+              
+              <h1 style="margin:0;font-family:Georgia, 'Times New Roman', serif;font-size:32px;font-style:italic;color:#9f1239;font-weight:normal;letter-spacing:0.5px;">
+                Merci pour votre commande.
+              </h1>
             </td>
           </tr>
 
-          <!-- Confirmation banner -->
           <tr>
-            <td style="background:#F0FBF8;border-bottom:1px solid #D8F3EC;padding:20px 32px;text-align:center;">
-              <p style="margin:0;font-size:18px;font-weight:700;color:#1A7A5E;">🎉 Commande confirmée !</p>
-              <p style="margin:6px 0 0;font-size:13px;color:#2EAF8B;">Commande <strong>#${order.display_id || order.id}</strong> reçue avec succès</p>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td style="padding:36px 40px 28px;">
-              <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#444;">
-                Bonjour <strong style="color:#1A1A2E;">${shippingAddr?.first_name || "cher client"}</strong>,
-              </p>
-              <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#555;">
-                Merci pour votre commande ! Nous la préparons avec soin dans notre atelier. Vous recevrez un email dès son expédition 🚀
+            <td style="padding:16px 48px 40px;text-align:center;">
+              <p style="margin:0 0 32px;font-size:15px;line-height:1.6;color:#4B5563;">
+                Bonjour <strong style="color:#111827;">${shippingAddr?.first_name || "cher client"}</strong>,<br><br>
+                Nous avons bien reçu votre commande et nous la préparons avec le plus grand soin. Vous recevrez un email dès que celle-ci sera expédiée.
               </p>
 
               ${orderNotesHtml}
 
-              <!-- Order table -->
-              <h3 style="margin:0 0 16px;font-size:15px;font-weight:700;color:#1A1A2E;border-bottom:2px solid #FFE0EC;padding-bottom:10px;">📦 Récapitulatif de commande</h3>
-              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid #F0E0E8;">
-                <tbody>
-                  ${lines}
-                </tbody>
-                <tfoot>
-                  <tr style="background:#FAFAFA;">
-                    <td style="padding:12px 16px;text-align:right;color:#888;font-size:14px;border-top:1px solid #F0E0E8;">Sous-total</td>
-                    <td style="padding:12px 16px;text-align:right;color:#888;font-size:14px;border-top:1px solid #F0E0E8;">${formatAmount(order.subtotal, order.currency_code)}</td>
-                  </tr>
-                  <tr style="background:#FAFAFA;">
-                    <td style="padding:12px 16px;text-align:right;color:#888;font-size:14px;">Livraison</td>
-                    <td style="padding:12px 16px;text-align:right;color:#888;font-size:14px;">${formatAmount(order.shipping_total, order.currency_code)}</td>
-                  </tr>
-                  <tr style="background:linear-gradient(135deg,#FF6B9D,#FF9EBB);">
-                    <td style="padding:14px 16px;text-align:right;font-weight:700;color:#ffffff;font-size:17px;">Total</td>
-                    <td style="padding:14px 16px;text-align:right;font-weight:700;color:#ffffff;font-size:17px;">${formatAmount(order.total, order.currency_code)}</td>
-                  </tr>
-                </tfoot>
-              </table>
+              <div style="text-align:left; background-color: #ffffff; margin-bottom: 32px;">
+                <h3 style="margin:0 0 16px 0; font-size:14px; text-transform:uppercase; letter-spacing:1px; color:#4B5563; border-bottom: 2px solid #F3F4F6; padding-bottom: 12px;">Récapitulatif</h3>
+                
+                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                  <tbody>
+                    ${lines}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td style="padding:16px 0 8px; text-align:right; color:#6B7280; font-size:14px;">Sous-total</td>
+                      <td style="padding:16px 0 8px; text-align:right; color:#111827; font-size:14px; font-weight: 500;">${formatAmount(order.subtotal, order.currency_code)}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:8px 0; text-align:right; color:#6B7280; font-size:14px;">Livraison</td>
+                      <td style="padding:8px 0; text-align:right; color:#111827; font-size:14px; font-weight: 500;">${formatAmount(order.shipping_total, order.currency_code)}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:16px 0 0; text-align:right; font-weight:bold; color:#9f1239; font-size:18px; border-top: 2px solid #F3F4F6;">Total</td>
+                      <td style="padding:16px 0 0; text-align:right; font-weight:bold; color:#9f1239; font-size:18px; border-top: 2px solid #F3F4F6;">${formatAmount(order.total, order.currency_code)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
 
-              ${addressHtml}
-
-              <!-- Prochaines étapes -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0;">
-                <tr>
-                  <td style="background:#F0FBF8;border-left:4px solid #2EAF8B;border-radius:0 8px 8px 0;padding:16px 20px;">
-                    <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1A7A5E;">✨ Prochaines étapes</p>
-                    <p style="margin:0;font-size:13px;color:#2EAF8B;line-height:1.8;">
-                      • Votre commande est en cours de préparation<br>
-                      • Un email d'expédition avec votre numéro de suivi vous sera envoyé<br>
-                      • Livraison estimée sous <strong>2–4 jours ouvrés</strong>
-                    </p>
-                  </td>
-                </tr>
-              </table>
+              <div style="text-align: left;">
+                ${addressHtml}
+              </div>
 
               ${firstOrderPromoCode ? `
-              <!-- Code Promo Première Commande -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:40px 0 24px; background-color: #FAFAFA; border-radius: 20px; border: 1px solid #E5E7EB;">
                 <tr>
-                  <td style="background:linear-gradient(135deg,#FF6B9D,#FF3D7F);border-radius:12px;padding:28px 24px;text-align:center;">
-                    <p style="margin:0 0 6px;font-size:12px;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">🎁 Cadeau de bienvenue</p>
-                    <p style="margin:0 0 18px;font-size:18px;font-weight:700;color:#ffffff;">Merci pour votre première commande !</p>
-                    <div style="background:#ffffff;border-radius:10px;padding:16px 24px;display:inline-block;margin:0 0 16px;">
-                      <p style="margin:0 0 4px;font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px;">Votre code personnel</p>
-                      <p style="margin:0;font-size:30px;font-weight:800;color:#FF3D7F;letter-spacing:3px;">${firstOrderPromoCode}</p>
+                  <td align="center" style="padding:32px 24px;">
+                    <span style="display:inline-block;padding:4px 12px;border-radius:50px;background-color:#FFE1EA;color:#9f1239;font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;">
+                      Cadeau de bienvenue
+                    </span>
+                    <h3 style="margin:0 0 16px;font-family:Georgia, 'Times New Roman', serif;font-size:22px;font-style:italic;color:#111827;font-weight:normal;">Une petite attention pour vous.</h3>
+                    <p style="margin:0 0 24px;font-size:14px;color:#4B5563;">Pour vous remercier de votre première commande, profitez de <strong>-10%</strong> sur la prochaine, sans minimum d'achat.</p>
+                    
+                    <div style="background-color:#ffffff;border: 1px dashed #D1D5DB; border-radius:12px;padding:16px 24px;display:inline-block;margin:0 0 8px;">
+                      <p style="margin:0;font-size:24px;font-weight:bold;color:#0f5150;letter-spacing:2px;">${firstOrderPromoCode}</p>
                     </div>
-                    <p style="margin:0 0 6px;font-size:17px;font-weight:700;color:#ffffff;"><strong>-10%</strong> sur votre prochaine commande</p>
-                    <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.75);">Code à usage unique • Sans minimum d'achat</p>
+                    <p style="margin:0;font-size:12px;color:#9CA3AF;">Code personnel à usage unique.</p>
                   </td>
                 </tr>
               </table>
               ` : ""}
 
-              <!-- CTA -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 40px;">
                 <tr>
-                  <td align="center" style="padding:8px 0 8px;">
+                  <td align="center">
                     <a href="${orderUrl}"
-                       style="display:inline-block;background:linear-gradient(135deg,#FF6B9D,#FF3D7F);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:15px 44px;border-radius:50px;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(255,61,127,0.3);">
-                      📦 Suivre ma commande
+                       style="display:inline-block;background-color:#FFE1EA;color:#9f1239;font-size:14px;font-weight:bold;text-decoration:none;padding:16px 40px;border-radius:50px;">
+                      Suivre ma commande
                     </a>
                   </td>
                 </tr>
               </table>
+
             </td>
           </tr>
 
-          <!-- Footer -->
           <tr>
-            <td style="background:#FAFAFA;border-top:1px solid #F0F0F0;padding:24px 40px;text-align:center;">
-              <div style="margin-bottom:12px;">
-                <span style="display:inline-block;background:#FFF5F8;border-radius:20px;padding:6px 14px;font-size:12px;color:#FF6B9D;font-weight:600;margin:0 4px;">🟢 100% Halal</span>
-                <span style="display:inline-block;background:#F0FBF8;border-radius:20px;padding:6px 14px;font-size:12px;color:#2EAF8B;font-weight:600;margin:0 4px;">✨ +100 variétés</span>
-                <span style="display:inline-block;background:#FFF5F8;border-radius:20px;padding:6px 14px;font-size:12px;color:#FF6B9D;font-weight:600;margin:0 4px;">🚀 Envoi 48h</span>
-              </div>
-              <p style="margin:8px 0 0;font-size:12px;color:#bbb;">
-                © 2026 GomGom Bonbons — <a href="https://gomgombonbons.com" style="color:#FF6B9D;text-decoration:none;">gomgombonbons.com</a>
+            <td style="background-color:#F9FAFB;border-top:1px solid #F3F4F6;padding:32px 48px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#9CA3AF;line-height:1.6;">
+                © ${new Date().getFullYear()} GomGom Bonbons<br>
+                L'art d'offrir la gourmandise.<br><br>
+                <a href="https://gomgombonbons.com" style="color:#0f5150;text-decoration:none;font-weight:500;">gomgombonbons.com</a>
               </p>
             </td>
           </tr>
@@ -322,6 +309,8 @@ const buildOrderEmailHtml = ({ order, firstOrderPromoCode, orderUrl }: EmailTemp
 </body>
 </html>`
 }
+
+// ─── LOGIQUE MEDUSA (Inchangée) ───
 
 const buildOrderEmailText = ({ order, firstOrderPromoCode, orderUrl }: EmailTemplateInput) => {
   const shippingAddr = order.shipping_address
@@ -346,7 +335,7 @@ Livraison: ${formatAmount(order.shipping_total, order.currency_code)}
 Total: ${formatAmount(order.total, order.currency_code)}
 
 ${isRelayPoint && relayPoint ? `
-Point ${isChronopost ? "Chronopost" : "Relais"} de livraison:
+Point de livraison:
 ${relayPoint.name}
 ${relayPoint.address}
 ${relayPoint.postalCode} ${relayPoint.city}
@@ -359,7 +348,7 @@ ${shippingAddr.postal_code} ${shippingAddr.city}
 
 ${order.metadata?.order_notes ? `Instructions spéciales: ${order.metadata.order_notes}\n` : ""}
 ${firstOrderPromoCode ? `
-🎁 CADEAU DE BIENVENUE
+CADEAU DE BIENVENUE
 Merci pour votre première commande !
 Votre code promo personnel: ${firstOrderPromoCode}
 -10% sur votre prochaine commande
@@ -372,10 +361,6 @@ L'équipe GomGom Bonbons
       `.trim()
 }
 
-/**
- * Génère un code promo unique pour les nouveaux clients (1ère commande)
- * Le code donne 10% de réduction et n'est utilisable qu'une seule fois
- */
 async function generateFirstOrderPromoCode(
   container: Container,
   order: OrderRecord,
@@ -390,14 +375,11 @@ async function generateFirstOrderPromoCode(
   try {
     const promotionModuleService = container.resolve<PromotionService>("promotion")
     
-    // Vérifier si une campagne MERCI existe déjà pour cet email
-    // On utilise le nom de la campagne qui contient l'email normalisé
     const emailNormalized = customerEmail.replace(/[^a-zA-Z0-9]/g, '-')
     const campaignPrefix = `MERCI-${emailNormalized}`
     
     logger.info(`[PROMO] Checking existing campaigns for email: ${customerEmail} (prefix: ${campaignPrefix})`)
     
-    // Lister les campagnes existantes
     const existingCampaigns = await promotionModuleService.listCampaigns(
       {},
       { select: ["id", "name"], take: 1000 }
@@ -405,7 +387,6 @@ async function generateFirstOrderPromoCode(
     
     logger.info(`[PROMO] Found ${existingCampaigns?.length || 0} total campaigns`)
     
-    // Chercher si une campagne existe déjà pour cet email
     const existingCampaignForEmail = existingCampaigns?.find((campaign) => {
       const matches = campaign.name?.startsWith(campaignPrefix)
       if (campaign.name?.startsWith('MERCI-')) {
@@ -421,17 +402,12 @@ async function generateFirstOrderPromoCode(
     
     logger.info(`[PROMO] No existing campaign for ${customerEmail}, generating new code`)
     
-    // Générer un code unique
     const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase()
     const promoCode = `MERCI-${randomPart}`
     
     logger.info(`[PROMO] Generating first order promo code: ${promoCode} for ${customerEmail}`)
-    
-    // Créer la promotion avec une règle de 10% de réduction
-    // On stocke l'email du client dans metadata pour éviter les doublons
     logger.info(`[PROMO] Creating promotion with code: ${promoCode}`)
     
-    // D'abord créer une campagne avec budget usage=1 pour limiter à 1 utilisation
     const campaignName = `MERCI-${customerEmail.replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}`
     
     const campaign = await promotionModuleService.createCampaigns({
@@ -439,7 +415,7 @@ async function generateFirstOrderPromoCode(
       campaign_identifier: promoCode,
       budget: {
         type: "usage",
-        limit: 1, // Le code ne peut être utilisé qu'une seule fois
+        limit: 1, 
       },
     })
     
@@ -448,9 +424,9 @@ async function generateFirstOrderPromoCode(
     const promotionData = {
       code: promoCode,
       type: "standard",
-      status: "active", // IMPORTANT: Le code doit être actif pour fonctionner
+      status: "active", 
       is_automatic: false,
-      campaign_id: campaign.id, // Lier à la campagne pour la limite d'usage
+      campaign_id: campaign.id, 
       metadata: {
         customer_email: customerEmail,
         created_for_order: order.display_id || order.id,
@@ -458,7 +434,7 @@ async function generateFirstOrderPromoCode(
       application_method: {
         type: "percentage",
         value: 10,
-        target_type: "items", // Applique uniquement sur les produits, pas la livraison
+        target_type: "items", 
         allocation: "across",
         currency_code: "eur",
       },
@@ -478,20 +454,15 @@ async function generateFirstOrderPromoCode(
     if (err?.stack) {
       logger.error(`[PROMO] Error stack: ${err.stack}`)
     }
-    // Ne pas bloquer la commande si la création du code échoue
     return null
   }
 }
 
-/**
- * Auto-link une commande guest à un compte client existant si l'email correspond
- */
 async function autoLinkOrderToCustomer(
   container: Container,
   order: OrderRecord,
   logger: Logger
 ): Promise<void> {
-  // Vérifier si la commande a déjà un customer_id (pas guest)
   if (order.customer_id) {
     logger.info(`[AUTO-LINK] Order ${order.display_id} already has customer_id, skipping`)
     return
@@ -508,13 +479,11 @@ async function autoLinkOrderToCustomer(
   try {
     const customerModuleService = container.resolve<CustomerService>("customer")
     
-    // Chercher un client avec cet email (insensible à la casse)
     const customers = await customerModuleService.listCustomers(
       { email: orderEmail },
       { select: ["id", "email", "metadata"] }
     )
 
-    // Vérifier aussi avec l'email original si différent
     let matchingCustomer = customers?.find((c) => 
       c.email?.toLowerCase() === orderEmail
     )
@@ -536,7 +505,6 @@ async function autoLinkOrderToCustomer(
 
     logger.info(`[AUTO-LINK] Found customer ${matchingCustomer.id} for email ${orderEmail}`)
 
-    // Lier la commande au client
     const orderModuleService = container.resolve<OrderService>("order")
     await orderModuleService.updateOrders(order.id, {
       customer_id: matchingCustomer.id,
@@ -600,10 +568,6 @@ export default async function handleOrderEmails({ event, container }: Subscriber
     
     logger.info(`[ORDER-PLACED] Order retrieved successfully: ${order.display_id || order.id}`)
 
-    // Note: Medusa v2 copie automatiquement cart.metadata → order.metadata lors de cart.complete()
-    // Aucune action manuelle n'est nécessaire, les order_notes sont déjà dans order.metadata
-
-    // AUTO-LINK: Si la commande est guest, vérifier si un compte existe avec cet email
     let firstOrderPromoCode: string | null = null
     if (event.name === OrderWorkflowEvents.PLACED) {
       try {
@@ -613,7 +577,6 @@ export default async function handleOrderEmails({ event, container }: Subscriber
         logger.error(`[ORDER-PLACED] Auto-link error: ${err?.message || "unknown"}`)
       }
       
-      // Générer un code promo si c'est la première commande
       try {
         firstOrderPromoCode = await generateFirstOrderPromoCode(container, order, logger)
       } catch (promoError) {
@@ -622,13 +585,10 @@ export default async function handleOrderEmails({ event, container }: Subscriber
       }
     }
 
-    // Envoyer notification Slack pour les nouvelles commandes
     if (event.name === OrderWorkflowEvents.PLACED) {
       try {
         const shippingAddr = order.shipping_address
         const shippingMethod = order.shipping_methods?.[0]
-        
-        // Récupérer le point relais depuis les metadata
         const relayPoint = order.metadata?.relay_point
         
         const orderItems = order.items ?? []
@@ -673,11 +633,9 @@ export default async function handleOrderEmails({ event, container }: Subscriber
       } catch (slackError) {
         const err = slackError as Error | undefined
         logger.error(`Erreur notification Slack: ${err?.message || "unknown"}`)
-        // Ne pas bloquer l'envoi d'email si Slack échoue
       }
     }
 
-    // Envoi d'email de confirmation
     try {
       const to = order.email
       if (!to || !to.includes("@")) {
@@ -689,8 +647,8 @@ export default async function handleOrderEmails({ event, container }: Subscriber
 
       const orderUrl = `https://gomgombonbons.com/fr/account/orders`
       const subject = event.name === OrderWorkflowEvents.COMPLETED ?
-        `Votre commande #${order.display_id || order.id} est terminée` :
-        `Confirmation de commande #${order.display_id || order.id}`
+        `Votre commande #${order.display_id || order.id} est expédiée` :
+        `Confirmation de commande #${order.display_id || order.id} — GomGom`
 
       const html = buildOrderEmailHtml({
         order,
