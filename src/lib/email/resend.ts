@@ -36,7 +36,7 @@ export async function sendResendEmail({
     subject,
     html,
     text,
-    reply_to: replyTo,
+    replyTo: replyTo,
   })
 
   if (error) {
