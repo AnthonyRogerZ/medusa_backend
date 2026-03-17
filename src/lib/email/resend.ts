@@ -30,14 +30,16 @@ export async function sendResendEmail({
   const fromName = process.env.RESEND_FROM_NAME || "GomGom Bonbons"
   const replyTo = process.env.RESEND_REPLY_TO || "contact@gomgombonbons.com"
 
-  const { data, error } = await resend.emails.send({
+  const emailPayload: Record<string, unknown> = {
     from: `${fromName} <${from}>`,
     to: [to],
     subject,
-    html,
-    text,
-    replyTo: replyTo,
-  })
+    replyTo,
+  }
+  if (html) emailPayload.html = html
+  if (text) emailPayload.text = text
+
+  const { data, error } = await resend.emails.send(emailPayload as any)
 
   if (error) {
     throw new Error(`[resend] Erreur envoi email: ${error.message}`)
