@@ -310,7 +310,7 @@ const buildOrderEmailHtml = ({ order, firstOrderPromoCode, orderUrl }: EmailTemp
                 <span style="display:inline-block;background:#FFF5F8;border-radius:20px;padding:6px 14px;font-size:12px;color:#FF6B9D;font-weight:600;margin:0 4px;">🚀 Envoi 48h</span>
               </div>
               <p style="margin:8px 0 0;font-size:12px;color:#bbb;">
-                © 2024 GomGom Bonbons — <a href="https://gomgombonbons.com" style="color:#FF6B9D;text-decoration:none;">gomgombonbons.com</a>
+                © 2026 GomGom Bonbons — <a href="https://gomgombonbons.com" style="color:#FF6B9D;text-decoration:none;">gomgombonbons.com</a>
               </p>
             </td>
           </tr>
