@@ -186,112 +186,138 @@ const buildOrderEmailHtml = ({ order, firstOrderPromoCode, orderUrl }: EmailTemp
   const addressHtml = buildAddressHtml(shippingAddr, relayPoint, order.shipping_methods?.[0]?.name)
   const orderNotesHtml = buildOrderNotesHtml(order.metadata?.order_notes)
 
-  return `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-        <!-- Header -->
-        <div style="background: linear-gradient(135deg, #FFB6C1 0%, #98D8C8 100%); padding: 30px 20px; text-align: center;">
-          <h1 style="margin: 0; color: #000; font-size: 28px;">🎉 Commande Confirmée !</h1>
-          <p style="margin: 10px 0 0 0; color: #333; font-size: 16px;">
-            Merci pour votre confiance
-          </p>
-        </div>
-        
-        <!-- Content -->
-        <div style="padding: 30px 20px;">
-          <p style="font-size: 16px; line-height: 1.6; color: #333;">
-            Bonjour <strong>${shippingAddr?.first_name || "cher client"}</strong>,
-          </p>
-          
-          <p style="font-size: 16px; line-height: 1.6; color: #333;">
-            Nous avons bien reçu votre commande <strong>#${order.display_id || order.id}</strong> 
-            et nous la préparons avec soin ! 🍬
-          </p>
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commande confirmée - GomGom Bonbons</title>
+</head>
+<body style="margin:0;padding:0;background-color:#FFF5F8;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFF5F8;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
 
-          ${orderNotesHtml}
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#FF6B9D 0%,#FF9EBB 50%,#C8F0E8 100%);padding:40px 32px;text-align:center;">
+              <div style="font-size:42px;margin-bottom:8px;">🍬</div>
+              <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;text-shadow:0 1px 3px rgba(0,0,0,0.1);">GomGom Bonbons</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.85);letter-spacing:1.5px;text-transform:uppercase;font-weight:500;">Bonbons Halal Premium</p>
+            </td>
+          </tr>
 
-          <!-- Order Items -->
-          <div style="margin: 30px 0;">
-            <h2 style="font-size: 18px; color: #000; margin: 0 0 20px 0; border-bottom: 2px solid #FFB6C1; padding-bottom: 10px;">
-              📦 Votre commande
-            </h2>
-            
-            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
-              <tbody>
-                ${lines}
-              </tbody>
-              <tfoot>
-                <tr style="background: #f8f9fa;">
-                  <td style="padding: 15px 10px; text-align: right; color: #666;">Sous-total</td>
-                  <td style="padding: 15px 10px; text-align: right; color: #666;">${formatAmount(order.subtotal, order.currency_code)}</td>
-                </tr>
-                <tr style="background: #f8f9fa;">
-                  <td style="padding: 15px 10px; text-align: right; color: #666;">Livraison</td>
-                  <td style="padding: 15px 10px; text-align: right; color: #666;">${formatAmount(order.shipping_total, order.currency_code)}</td>
-                </tr>
-                <tr style="background: #FFB6C1;">
-                  <td style="padding: 15px 10px; text-align: right; font-weight: bold; color: #000; font-size: 18px;">Total</td>
-                  <td style="padding: 15px 10px; text-align: right; font-weight: bold; color: #000; font-size: 18px;">${formatAmount(order.total, order.currency_code)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+          <!-- Confirmation banner -->
+          <tr>
+            <td style="background:#F0FBF8;border-bottom:1px solid #D8F3EC;padding:20px 32px;text-align:center;">
+              <p style="margin:0;font-size:18px;font-weight:700;color:#1A7A5E;">🎉 Commande confirmée !</p>
+              <p style="margin:6px 0 0;font-size:13px;color:#2EAF8B;">Commande <strong>#${order.display_id || order.id}</strong> reçue avec succès</p>
+            </td>
+          </tr>
 
-          ${addressHtml}
-          
-          <!-- CTA Button -->
-          <div style="text-align: center; margin: 35px 0;">
-            <a href="${orderUrl}" 
-               style="display: inline-block; background: #000; color: white; padding: 15px 40px; 
-                      text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-              📱 Suivre ma commande
-            </a>
-          </div>
-          
-          <!-- Info Box -->
-          <div style="background: #e8f5e9; border-radius: 8px; padding: 20px; margin: 25px 0;">
-            <p style="margin: 0; color: #2e7d32; line-height: 1.6; font-size: 14px;">
-              <strong>✨ Prochaines étapes :</strong><br>
-              • Votre commande est en cours de préparation<br>
-              • Vous recevrez un email dès l'expédition avec votre numéro de suivi<br>
-              • Livraison estimée sous 2-4 jours ouvrés
-            </p>
-          </div>
-          
-          ${firstOrderPromoCode ? `
-          <!-- Code Promo Première Commande -->
-          <div style="background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 100%); border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center;">
-            <p style="margin: 0 0 10px 0; color: #fff; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
-              🎁 Cadeau de bienvenue
-            </p>
-            <p style="margin: 0 0 15px 0; color: #fff; font-size: 18px; font-weight: bold;">
-              Merci pour votre première commande !
-            </p>
-            <div style="background: #fff; border-radius: 8px; padding: 15px; display: inline-block; margin: 10px 0;">
-              <p style="margin: 0 0 5px 0; color: #666; font-size: 12px;">Votre code promo personnel</p>
-              <p style="margin: 0; color: #C4668A; font-size: 28px; font-weight: bold; letter-spacing: 2px;">
-                ${firstOrderPromoCode}
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px 28px;">
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#444;">
+                Bonjour <strong style="color:#1A1A2E;">${shippingAddr?.first_name || "cher client"}</strong>,
               </p>
-            </div>
-            <p style="margin: 15px 0 0 0; color: #fff; font-size: 16px;">
-              <strong>-10%</strong> sur votre prochaine commande
-            </p>
-            <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.8); font-size: 12px;">
-              Code à usage unique • Sans minimum d'achat
-            </p>
-          </div>
-          ` : ""}
-          
-          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-          
+              <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#555;">
+                Merci pour votre commande ! Nous la préparons avec soin dans notre atelier. Vous recevrez un email dès son expédition 🚀
+              </p>
+
+              ${orderNotesHtml}
+
+              <!-- Order table -->
+              <h3 style="margin:0 0 16px;font-size:15px;font-weight:700;color:#1A1A2E;border-bottom:2px solid #FFE0EC;padding-bottom:10px;">📦 Récapitulatif de commande</h3>
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid #F0E0E8;">
+                <tbody>
+                  ${lines}
+                </tbody>
+                <tfoot>
+                  <tr style="background:#FAFAFA;">
+                    <td style="padding:12px 16px;text-align:right;color:#888;font-size:14px;border-top:1px solid #F0E0E8;">Sous-total</td>
+                    <td style="padding:12px 16px;text-align:right;color:#888;font-size:14px;border-top:1px solid #F0E0E8;">${formatAmount(order.subtotal, order.currency_code)}</td>
+                  </tr>
+                  <tr style="background:#FAFAFA;">
+                    <td style="padding:12px 16px;text-align:right;color:#888;font-size:14px;">Livraison</td>
+                    <td style="padding:12px 16px;text-align:right;color:#888;font-size:14px;">${formatAmount(order.shipping_total, order.currency_code)}</td>
+                  </tr>
+                  <tr style="background:linear-gradient(135deg,#FF6B9D,#FF9EBB);">
+                    <td style="padding:14px 16px;text-align:right;font-weight:700;color:#ffffff;font-size:17px;">Total</td>
+                    <td style="padding:14px 16px;text-align:right;font-weight:700;color:#ffffff;font-size:17px;">${formatAmount(order.total, order.currency_code)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+
+              ${addressHtml}
+
+              <!-- Prochaines étapes -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0;">
+                <tr>
+                  <td style="background:#F0FBF8;border-left:4px solid #2EAF8B;border-radius:0 8px 8px 0;padding:16px 20px;">
+                    <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1A7A5E;">✨ Prochaines étapes</p>
+                    <p style="margin:0;font-size:13px;color:#2EAF8B;line-height:1.8;">
+                      • Votre commande est en cours de préparation<br>
+                      • Un email d'expédition avec votre numéro de suivi vous sera envoyé<br>
+                      • Livraison estimée sous <strong>2–4 jours ouvrés</strong>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              ${firstOrderPromoCode ? `
+              <!-- Code Promo Première Commande -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0;">
+                <tr>
+                  <td style="background:linear-gradient(135deg,#FF6B9D,#FF3D7F);border-radius:12px;padding:28px 24px;text-align:center;">
+                    <p style="margin:0 0 6px;font-size:12px;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">🎁 Cadeau de bienvenue</p>
+                    <p style="margin:0 0 18px;font-size:18px;font-weight:700;color:#ffffff;">Merci pour votre première commande !</p>
+                    <div style="background:#ffffff;border-radius:10px;padding:16px 24px;display:inline-block;margin:0 0 16px;">
+                      <p style="margin:0 0 4px;font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px;">Votre code personnel</p>
+                      <p style="margin:0;font-size:30px;font-weight:800;color:#FF3D7F;letter-spacing:3px;">${firstOrderPromoCode}</p>
+                    </div>
+                    <p style="margin:0 0 6px;font-size:17px;font-weight:700;color:#ffffff;"><strong>-10%</strong> sur votre prochaine commande</p>
+                    <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.75);">Code à usage unique • Sans minimum d'achat</p>
+                  </td>
+                </tr>
+              </table>
+              ` : ""}
+
+              <!-- CTA -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:8px 0 8px;">
+                    <a href="${orderUrl}"
+                       style="display:inline-block;background:linear-gradient(135deg,#FF6B9D,#FF3D7F);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:15px 44px;border-radius:50px;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(255,61,127,0.3);">
+                      📦 Suivre ma commande
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
           <!-- Footer -->
-          <p style="font-size: 14px; color: #999; text-align: center; line-height: 1.8;">
-            Des questions ? Répondez simplement à cet email<br>
-            <strong style="color: #FFB6C1;">Merci pour votre confiance !</strong><br>
-            L'équipe GomGom Bonbons 🍬
-          </p>
-        </div>
-      </div>
-      `
+          <tr>
+            <td style="background:#FAFAFA;border-top:1px solid #F0F0F0;padding:24px 40px;text-align:center;">
+              <div style="margin-bottom:12px;">
+                <span style="display:inline-block;background:#FFF5F8;border-radius:20px;padding:6px 14px;font-size:12px;color:#FF6B9D;font-weight:600;margin:0 4px;">🟢 100% Halal</span>
+                <span style="display:inline-block;background:#F0FBF8;border-radius:20px;padding:6px 14px;font-size:12px;color:#2EAF8B;font-weight:600;margin:0 4px;">✨ +100 variétés</span>
+                <span style="display:inline-block;background:#FFF5F8;border-radius:20px;padding:6px 14px;font-size:12px;color:#FF6B9D;font-weight:600;margin:0 4px;">🚀 Envoi 48h</span>
+              </div>
+              <p style="margin:8px 0 0;font-size:12px;color:#bbb;">
+                © 2024 GomGom Bonbons — <a href="https://gomgombonbons.com" style="color:#FF6B9D;text-decoration:none;">gomgombonbons.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
 }
 
 const buildOrderEmailText = ({ order, firstOrderPromoCode, orderUrl }: EmailTemplateInput) => {

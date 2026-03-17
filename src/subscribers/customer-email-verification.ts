@@ -7,20 +7,97 @@ export const config = {
   event: CustomerWorkflowEvents.CREATED,
 }
 
-/**
- * Subscriber qui envoie un email de vérification quand un nouveau compte client est créé.
- * 
- * Le token est stocké dans customer.metadata.email_verification
- * Une fois vérifié, email_verified sera true et les commandes guest seront liées.
- */
+const buildVerificationEmailHtml = (firstName: string, verificationUrl: string) => `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vérifiez votre email - GomGom Bonbons</title>
+</head>
+<body style="margin:0;padding:0;background-color:#FFF5F8;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFF5F8;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#FF6B9D 0%,#FF9EBB 50%,#C8F0E8 100%);padding:40px 32px;text-align:center;">
+              <div style="font-size:42px;margin-bottom:8px;">🍬</div>
+              <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;text-shadow:0 1px 3px rgba(0,0,0,0.1);">GomGom Bonbons</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.85);letter-spacing:1.5px;text-transform:uppercase;font-weight:500;">Bonbons Halal Premium</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 40px 32px;">
+              <h2 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1A1A2E;">Bienvenue, ${firstName} ! 🎉</h2>
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#555;">
+                Merci de rejoindre la famille GomGom Bonbons. Votre compte a bien été créé — il ne reste plus qu'une petite étape pour l'activer.
+              </p>
+              <p style="margin:0 0 32px;font-size:15px;line-height:1.7;color:#555;">
+                Cliquez sur le bouton ci-dessous pour vérifier votre adresse email et accéder à toutes les douceurs de votre espace personnel 🍭
+              </p>
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:8px 0 36px;">
+                    <a href="${verificationUrl}"
+                       style="display:inline-block;background:linear-gradient(135deg,#FF6B9D,#FF3D7F);color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:16px 48px;border-radius:50px;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(255,61,127,0.35);">
+                      ✅ Vérifier mon adresse email
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Info box -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background:#FFF5F8;border-left:4px solid #FF6B9D;border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:24px;">
+                    <p style="margin:0;font-size:13px;color:#888;line-height:1.6;">
+                      ⏱ Ce lien est valable <strong style="color:#FF6B9D;">24 heures</strong>.<br>
+                      Si vous n'avez pas créé de compte, ignorez simplement cet email.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:24px 0 0;font-size:13px;color:#bbb;word-break:break-all;">
+                Lien alternatif : <a href="${verificationUrl}" style="color:#FF6B9D;">${verificationUrl}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#FAFAFA;border-top:1px solid #F0F0F0;padding:24px 40px;text-align:center;">
+              <div style="margin-bottom:12px;">
+                <span style="display:inline-block;background:#FFF5F8;border-radius:20px;padding:6px 14px;font-size:12px;color:#FF6B9D;font-weight:600;margin:0 4px;">🟢 100% Halal</span>
+                <span style="display:inline-block;background:#F0FBF8;border-radius:20px;padding:6px 14px;font-size:12px;color:#2EAF8B;font-weight:600;margin:0 4px;">✨ +100 variétés</span>
+                <span style="display:inline-block;background:#FFF5F8;border-radius:20px;padding:6px 14px;font-size:12px;color:#FF6B9D;font-weight:600;margin:0 4px;">🚀 Envoi 48h</span>
+              </div>
+              <p style="margin:8px 0 0;font-size:12px;color:#bbb;">
+                © 2024 GomGom Bonbons — <a href="https://gomgombonbons.com" style="color:#FF6B9D;text-decoration:none;">gomgombonbons.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+
 export default async function handleCustomerEmailVerification({ event, container }: SubscriberArgs) {
-  const logger = container.resolve("logger") as { 
+  const logger = container.resolve("logger") as {
     info: (m: string) => void
     warn: (m: string) => void
-    error: (m: string) => void 
+    error: (m: string) => void
   }
 
-  // L'événement customer.created envoie un tableau d'objets avec id
   const customers = event.data as { id: string }[] | { id: string }
   const customerList = Array.isArray(customers) ? customers : [customers]
 
@@ -44,7 +121,6 @@ export default async function handleCustomerEmailVerification({ event, container
     if (!customerId) continue
 
     try {
-      // 1. Récupérer les infos du nouveau client
       const customerResult = await remoteQuery({
         entryPoint: "customer",
         fields: ["id", "email", "first_name", "metadata"],
@@ -57,20 +133,17 @@ export default async function handleCustomerEmailVerification({ event, container
         continue
       }
 
-      // Vérifier si déjà vérifié (ex: compte Google OAuth)
       if (customer.metadata?.email_verified === true) {
         logger.info(`[EMAIL-VERIFICATION] Customer ${customerId} already verified, skipping`)
         continue
       }
 
       const email = customer.email
-      const firstName = customer.first_name || "Client"
+      const firstName = customer.first_name || "cher client"
 
-      // 2. Générer un token de vérification
       const token = generateVerificationToken()
       const hashedToken = hashToken(token)
 
-      // 3. Stocker le token hashé dans les metadata du customer
       await customerModuleService.updateCustomers(customerId, {
         metadata: {
           ...customer.metadata,
@@ -82,70 +155,16 @@ export default async function handleCustomerEmailVerification({ event, container
         },
       })
 
-      // 4. Construire le lien de vérification
       const verificationUrl = `${frontendUrl}/verify-email?token=${encodeURIComponent(token)}&customer_id=${encodeURIComponent(customerId)}`
 
-      // 5. Envoyer l'email de vérification
       await sendResendEmail({
         to: email,
-        subject: "Vérifiez votre adresse email - GomGom Bonbons",
-        html: `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="text-align: center; margin-bottom: 30px;">
-    <h1 style="color: #e91e63; margin: 0;">🍬 GomGom Bonbons</h1>
-  </div>
-  
-  <h2 style="color: #333;">Bonjour ${firstName} !</h2>
-  
-  <p>Merci d'avoir créé votre compte chez GomGom Bonbons.</p>
-  
-  <p>Pour finaliser votre inscription et accéder à toutes les fonctionnalités de votre compte, veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous :</p>
-  
-  <div style="text-align: center; margin: 30px 0;">
-    <a href="${verificationUrl}" style="background-color: #e91e63; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-      Vérifier mon email
-    </a>
-  </div>
-  
-  <p style="color: #666; font-size: 14px;">
-    Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :<br>
-    <a href="${verificationUrl}" style="color: #e91e63; word-break: break-all;">${verificationUrl}</a>
-  </p>
-  
-  <p style="color: #666; font-size: 14px;">
-    Ce lien est valable pendant 24 heures.
-  </p>
-  
-  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-  
-  <p style="color: #999; font-size: 12px; text-align: center;">
-    Si vous n'avez pas créé de compte, vous pouvez ignorer cet email.
-  </p>
-</body>
-</html>
-        `,
-        text: `Bonjour ${firstName},
-
-Merci d'avoir créé votre compte chez GomGom Bonbons.
-
-Pour vérifier votre adresse email, cliquez sur ce lien :
-${verificationUrl}
-
-Ce lien est valable pendant 24 heures.
-
-Si vous n'avez pas créé de compte, vous pouvez ignorer cet email.
-
-L'équipe GomGom Bonbons`,
+        subject: "Vérifiez votre adresse email 🍬 GomGom Bonbons",
+        html: buildVerificationEmailHtml(firstName, verificationUrl),
+        text: `Bonjour ${firstName},\n\nMerci de rejoindre GomGom Bonbons !\n\nPour vérifier votre adresse email, cliquez sur ce lien :\n${verificationUrl}\n\nCe lien est valable 24 heures.\n\nSi vous n'avez pas créé de compte, ignorez cet email.\n\nL'équipe GomGom Bonbons 🍬`,
       })
 
       logger.info(`[EMAIL-VERIFICATION] Verification email sent to ${email} for customer ${customerId}`)
-
     } catch (error: any) {
       logger.error(`[EMAIL-VERIFICATION] Error for customer ${customerId}: ${error?.message || error}`)
     }

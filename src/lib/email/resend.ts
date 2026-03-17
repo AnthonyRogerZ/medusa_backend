@@ -18,24 +18,28 @@ export async function sendResendEmail({
   subject,
   html,
   text,
+  replyTo,
 }: {
   to: string
   subject: string
   html?: string
   text?: string
+  replyTo?: string
 }) {
   const resend = getResendClient()
 
   const from = process.env.RESEND_FROM_EMAIL || "no-reply@gomgombonbons.com"
   const fromName = process.env.RESEND_FROM_NAME || "GomGom Bonbons"
-  const replyTo = process.env.RESEND_REPLY_TO || "contact@gomgombonbons.com"
+
+  // replyTo : utilise le paramètre passé, sinon la variable d'env, sinon rien
+  const resolvedReplyTo = replyTo ?? process.env.RESEND_REPLY_TO
 
   const emailPayload: Record<string, unknown> = {
     from: `${fromName} <${from}>`,
     to: [to],
     subject,
-    replyTo,
   }
+  if (resolvedReplyTo) emailPayload.replyTo = resolvedReplyTo
   if (html) emailPayload.html = html
   if (text) emailPayload.text = text
 
