@@ -35,7 +35,6 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
         "display_id",
         "email",
         "currency_code",
-        "fulfillment_status",
         "items.*",
         "shipping_address.*",
         "shipping_methods.*",
@@ -52,7 +51,11 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       })
     }
 
-    logger.info(`[FULFILLMENT] Processing order ${orderId} (status: ${order.fulfillment_status}) with tracking ${trackingNumber}`)
+    // Détecter si déjà expédié via les fulfillments existants (shipped_at non null)
+    const existingFulfillments: any[] = order.fulfillments || []
+    const alreadyShipped = existingFulfillments.some((f: any) => f.shipped_at !== null && f.canceled_at === null)
+
+    logger.info(`[FULFILLMENT] Processing order ${orderId} (already shipped: ${alreadyShipped}, fulfillments: ${existingFulfillments.length}) with tracking ${trackingNumber}`)
 
     // Détecter le transporteur depuis shipping_methods
     let carrier = "colissimo" // Par défaut
@@ -84,7 +87,6 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     logger.info(`[FULFILLMENT] Detected carrier: ${carrier}, tracking URL: ${trackingUrl}`)
 
     // ── CAS 1 : commande déjà expédiée → on renvoie juste l'email avec le nouveau tracking ──
-    const alreadyShipped = order.fulfillment_status === "shipped" || order.fulfillment_status === "fulfilled"
     if (alreadyShipped) {
       logger.info(`[FULFILLMENT] Order already shipped — skipping fulfillment creation, resending email with new tracking`)
       // Pas de création de fulfillment, on passe directement à l'email
