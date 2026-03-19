@@ -129,7 +129,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     logger.info(`[SHIPMENT] Shipment created with tracking: ${trackingNumber}`)
 
     // Envoyer un email personnalisé au client
-    const { sendMailjetEmail } = await import("../../lib/email/mailjet.js")
+    const { sendResendEmail: sendMailjetEmail } = await import("../../lib/email/resend.js")
     
     const carrierName = carrier === "mondial-relay" 
       ? "Mondial Relay" 
