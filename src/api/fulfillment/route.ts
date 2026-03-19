@@ -27,7 +27,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     const logger = req.scope.resolve(ContainerRegistrationKeys.LOGGER)
     const remoteQuery = req.scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY) as any
     
-    // Récupérer la commande avec tous les détails
+    // Récupérer la commande avec tous les détails + fulfillments existants
     const [order] = await remoteQuery({
       entryPoint: "order",
       fields: [
@@ -35,9 +35,12 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
         "display_id",
         "email",
         "currency_code",
+        "fulfillment_status",
         "items.*",
         "shipping_address.*",
         "shipping_methods.*",
+        "fulfillments.*",
+        "fulfillments.labels.*",
       ],
       variables: { filters: { id: orderId } },
     })
@@ -49,7 +52,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       })
     }
 
-    logger.info(`[FULFILLMENT] Processing order ${orderId} with tracking ${trackingNumber}`)
+    logger.info(`[FULFILLMENT] Processing order ${orderId} (status: ${order.fulfillment_status}) with tracking ${trackingNumber}`)
 
     // Détecter le transporteur depuis shipping_methods
     let carrier = "colissimo" // Par défaut
@@ -61,7 +64,6 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       
       logger.info(`[FULFILLMENT] Shipping method name: ${methodName}`)
       
-      // Détecter depuis le nom de la méthode
       if (methodName.includes("mondial") || methodName.includes("relay")) {
         carrier = "mondial-relay"
         trackingUrl = `https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition=${trackingNumber}`
@@ -72,7 +74,6 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
         carrier = "colissimo"
         trackingUrl = `https://www.laposte.fr/outils/suivre-vos-envois?code=${trackingNumber}`
       } else {
-        // Fallback: Colissimo par défaut
         carrier = "colissimo"
         trackingUrl = `https://www.laposte.fr/outils/suivre-vos-envois?code=${trackingNumber}`
       }
@@ -82,51 +83,57 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
 
     logger.info(`[FULFILLMENT] Detected carrier: ${carrier}, tracking URL: ${trackingUrl}`)
 
-    // Créer le fulfillment via workflow Medusa
-    const { createOrderFulfillmentWorkflow } = await import("@medusajs/medusa/core-flows")
-    const { result } = await createOrderFulfillmentWorkflow(req.scope).run({
-      input: {
-        order_id: orderId,
-        created_by: "admin", // Peut être amélioré avec auth
-        items: order.items.map((item: any) => ({
-          id: item.id,
-          quantity: item.quantity,
-        })),
-        no_notification: false, // Envoyer la notification Medusa par défaut
-        location_id: null, // Utiliser la location par défaut
-        metadata: {
-          tracking_number: trackingNumber,
-          carrier: carrier,
-          tracking_url: trackingUrl,
-        },
-      },
-    })
-
-    logger.info(`[FULFILLMENT] Fulfillment created: ${JSON.stringify(result)}`)
-
-    // Créer le shipment avec tracking number pour marquer comme expédié
-    const { createOrderShipmentWorkflow } = await import("@medusajs/medusa/core-flows")
-    const fulfillmentId = result.id
-    
-    await createOrderShipmentWorkflow(req.scope).run({
-      input: {
-        order_id: orderId,
-        fulfillment_id: fulfillmentId,
-        items: order.items.map((item: any) => ({
-          id: item.id,
-          quantity: item.quantity,
-        })),
-        labels: [
-          {
+    // ── CAS 1 : commande déjà expédiée → on renvoie juste l'email avec le nouveau tracking ──
+    const alreadyShipped = order.fulfillment_status === "shipped" || order.fulfillment_status === "fulfilled"
+    if (alreadyShipped) {
+      logger.info(`[FULFILLMENT] Order already shipped — skipping fulfillment creation, resending email with new tracking`)
+      // Pas de création de fulfillment, on passe directement à l'email
+    } else {
+      // ── CAS 2 : première expédition normale ──
+      const { createOrderFulfillmentWorkflow } = await import("@medusajs/medusa/core-flows")
+      const { result } = await createOrderFulfillmentWorkflow(req.scope).run({
+        input: {
+          order_id: orderId,
+          created_by: "admin",
+          items: order.items.map((item: any) => ({
+            id: item.id,
+            quantity: item.quantity,
+          })),
+          no_notification: false,
+          location_id: null,
+          metadata: {
             tracking_number: trackingNumber,
+            carrier: carrier,
             tracking_url: trackingUrl,
-            label_url: "", // Optionnel
-          }
-        ],
-      },
-    })
+          },
+        },
+      })
 
-    logger.info(`[SHIPMENT] Shipment created with tracking: ${trackingNumber}`)
+      logger.info(`[FULFILLMENT] Fulfillment created: ${JSON.stringify(result)}`)
+
+      const { createOrderShipmentWorkflow } = await import("@medusajs/medusa/core-flows")
+      const fulfillmentId = result.id
+      
+      await createOrderShipmentWorkflow(req.scope).run({
+        input: {
+          order_id: orderId,
+          fulfillment_id: fulfillmentId,
+          items: order.items.map((item: any) => ({
+            id: item.id,
+            quantity: item.quantity,
+          })),
+          labels: [
+            {
+              tracking_number: trackingNumber,
+              tracking_url: trackingUrl,
+              label_url: "",
+            }
+          ],
+        },
+      })
+
+      logger.info(`[SHIPMENT] Shipment created with tracking: ${trackingNumber}`)
+    }
 
     // Envoyer un email personnalisé au client
     const { sendResendEmail } = await import("../../lib/email/resend.js")
