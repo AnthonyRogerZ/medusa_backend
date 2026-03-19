@@ -69,7 +69,9 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       
       if (methodName.includes("mondial") || methodName.includes("relay")) {
         carrier = "mondial-relay"
-        trackingUrl = `https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition=${trackingNumber}`
+        const postalCode = order.shipping_address?.postal_code || order.metadata?.relay_point?.postalCode || ""
+        const cpParam = postalCode ? `&codePostal=${postalCode}` : ""
+        trackingUrl = `https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition=${trackingNumber}${cpParam}`
       } else if (methodName.includes("chronopost")) {
         carrier = "chronopost"
         trackingUrl = `https://www.chronopost.fr/tracking-no-cms/suivi-page?listeNumerosLT=${trackingNumber}`
