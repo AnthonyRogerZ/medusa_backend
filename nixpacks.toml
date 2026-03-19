@@ -1,5 +1,5 @@
 [phases.install]
-cmds = ["npm install"]
+cmds = ["npm install --legacy-peer-deps"]
 
-[phases.build]
-cmds = ["npm run build"]
+[start]
+cmd = "cd .medusa/server && NODE_ENV=production npm start"
