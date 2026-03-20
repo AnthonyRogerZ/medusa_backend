@@ -79,18 +79,18 @@ function buildSlackMessage(data: OrderNotificationData) {
     orderUrl,
   } = data
 
-  const handDelivery = shippingMethod ? isHandDelivery(shippingMethod.name) : false
-
   // Détecter si remise en main propre
-  const isHandDelivery = (methodName: string): boolean => {
+  const checkHandDelivery = (methodName: string): boolean => {
     const name = methodName.toLowerCase()
     return name.includes('remise en main propre') || name.includes('main propre')
   }
 
+  const handDelivery = shippingMethod ? checkHandDelivery(shippingMethod.name) : false
+
   // Détecter l'icône du transporteur
   const getShippingIcon = (methodName: string): string => {
     const name = methodName.toLowerCase()
-    if (isHandDelivery(name)) return '🤝'
+    if (checkHandDelivery(name)) return '🤝'
     if (name.includes('mondial') || name.includes('relay')) return '📮'
     if (name.includes('chronopost')) return '⚡'
     if (name.includes('colissimo')) return '📦'

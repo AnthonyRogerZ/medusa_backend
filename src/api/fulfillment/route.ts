@@ -192,7 +192,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
           })),
           labels: [
             {
-              tracking_number: trackingNumber,
+              tracking_number: trackingNumber || "",
               tracking_url: trackingUrl,
               label_url: "",
             }
