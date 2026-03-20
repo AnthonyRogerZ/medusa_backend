@@ -18,6 +18,8 @@ type ShippingRates = {
 type CartItem = {
   title?: string
   quantity?: number
+  unit_price?: number
+  total?: number
   variant?: { weight?: number }
 }
 
@@ -276,12 +278,14 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
 
       // 7. Vérifier la livraison gratuite (Mondial Relay France uniquement)
       if (countryRates.freeShippingThreshold) {
-        // cart.total/subtotal n'est pas dans le contexte Medusa → calculer depuis les items
+        // Calculer le subtotal depuis les items (unit_price * quantity)
+        // car cart.subtotal et item.total ne sont pas toujours dans le contexte Medusa
         const cart = typedContext.cart as any
         const cartSubtotalFromCart = cart?.subtotal || cart?.total || 0
-        // item.total est en euros (ex: 15.99) — somme de tous les items
         const cartSubtotalFromItems = items.reduce<number>((sum, item: CartItem) => {
-          return sum + ((item as any).total || 0)
+          // Priorité : item.total > unit_price * quantity
+          const itemTotal = (item as any).total || ((item as any).unit_price || 0) * Number(item.quantity || 0)
+          return sum + itemTotal
         }, 0)
         const cartSubtotal = cartSubtotalFromCart > 0 ? cartSubtotalFromCart : cartSubtotalFromItems
         log(`💰 Subtotal: cart=${cartSubtotalFromCart}€, items=${cartSubtotalFromItems}€, utilisé=${cartSubtotal}€, seuil=${countryRates.freeShippingThreshold}€`)
