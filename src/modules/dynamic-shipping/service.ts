@@ -162,6 +162,7 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
       { id: "mondial-relay" },
       { id: "colissimo" },
       { id: "chronopost" },
+      { id: "hand-delivery" },
     ]
   }
 
@@ -222,6 +223,12 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
       // 4. Déterminer le transporteur depuis l'ID de l'option
       const optionId = String(optionData.id || "").toLowerCase()
       log(`📝 Option ID: "${optionId}"`)
+
+      // Remise en main propre → gratuit, pas de calcul
+      if (optionId.includes("hand-delivery")) {
+        return { calculated_amount: 0, is_calculated_price_tax_inclusive: false }
+      }
+
       let carrier = "mondial-relay"
       
       if (optionId.includes("colissimo")) {
