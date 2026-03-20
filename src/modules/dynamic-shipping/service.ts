@@ -276,11 +276,15 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
 
       // 7. Vérifier la livraison gratuite (Mondial Relay France uniquement)
       if (countryRates.freeShippingThreshold) {
-        // Utiliser subtotal (avant code promo) pour ne pas pénaliser les promos
+        // cart.total/subtotal n'est pas dans le contexte Medusa → calculer depuis les items
         const cart = typedContext.cart as any
-        const cartSubtotal = cart?.subtotal || cart?.total || 0
-        // Medusa v2 passe les montants en euros (pas en centimes)
-        log(`💰 Subtotal panier (avant promo): ${cartSubtotal}€, Seuil: ${countryRates.freeShippingThreshold}€`)
+        const cartSubtotalFromCart = cart?.subtotal || cart?.total || 0
+        // item.total est en euros (ex: 15.99) — somme de tous les items
+        const cartSubtotalFromItems = items.reduce<number>((sum, item: CartItem) => {
+          return sum + ((item as any).total || 0)
+        }, 0)
+        const cartSubtotal = cartSubtotalFromCart > 0 ? cartSubtotalFromCart : cartSubtotalFromItems
+        log(`💰 Subtotal: cart=${cartSubtotalFromCart}€, items=${cartSubtotalFromItems}€, utilisé=${cartSubtotal}€, seuil=${countryRates.freeShippingThreshold}€`)
         if (cartSubtotal >= countryRates.freeShippingThreshold) {
           finalPrice = 0
           log(`🎁 Livraison gratuite! (subtotal: ${cartSubtotal}€)`)
