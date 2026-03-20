@@ -39,7 +39,7 @@ const logger = (globalThis as { medusaLogger?: { info: (...args: unknown[]) => v
 const SHIPPING_RATES: ShippingRates = {
   "mondial-relay": {
     "fr": {
-      freeShippingThreshold: 5000, // 50€ en centimes
+      freeShippingThreshold: 50, // 50€ (Medusa v2 passe les montants en euros)
       brackets: [
         { minWeight: 0, maxWeight: 2, price: 599 },
         { minWeight: 2, maxWeight: 5, price: 799 },
@@ -272,10 +272,11 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
         // Utiliser subtotal (avant code promo) pour ne pas pénaliser les promos
         const cart = typedContext.cart as any
         const cartSubtotal = cart?.subtotal || cart?.total || 0
-        log(`💰 Subtotal panier (avant promo): ${cartSubtotal} centimes (${cartSubtotal/100}€), Seuil: ${countryRates.freeShippingThreshold} centimes`)
+        // Medusa v2 passe les montants en euros (pas en centimes)
+        log(`💰 Subtotal panier (avant promo): ${cartSubtotal}€, Seuil: ${countryRates.freeShippingThreshold}€`)
         if (cartSubtotal >= countryRates.freeShippingThreshold) {
           finalPrice = 0
-          log(`🎁 Livraison gratuite! (subtotal: ${cartSubtotal/100}€)`)
+          log(`🎁 Livraison gratuite! (subtotal: ${cartSubtotal}€)`)
         }
       }
 
