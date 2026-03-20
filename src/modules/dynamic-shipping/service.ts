@@ -269,11 +269,13 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
 
       // 7. Vérifier la livraison gratuite (Mondial Relay France uniquement)
       if (countryRates.freeShippingThreshold) {
-        const cartTotal = typedContext.cart?.total || 0
-        log(`💰 Total panier: ${cartTotal} centimes (${cartTotal/100}€), Seuil: ${countryRates.freeShippingThreshold} centimes`)
-        if (cartTotal >= countryRates.freeShippingThreshold) {
+        // Utiliser subtotal (avant code promo) pour ne pas pénaliser les promos
+        const cart = typedContext.cart as any
+        const cartSubtotal = cart?.subtotal || cart?.total || 0
+        log(`💰 Subtotal panier (avant promo): ${cartSubtotal} centimes (${cartSubtotal/100}€), Seuil: ${countryRates.freeShippingThreshold} centimes`)
+        if (cartSubtotal >= countryRates.freeShippingThreshold) {
           finalPrice = 0
-          log(`🎁 Livraison gratuite! (total: ${cartTotal/100}€)`)
+          log(`🎁 Livraison gratuite! (subtotal: ${cartSubtotal/100}€)`)
         }
       }
 
