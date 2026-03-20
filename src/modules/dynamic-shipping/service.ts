@@ -39,7 +39,7 @@ const logger = (globalThis as { medusaLogger?: { info: (...args: unknown[]) => v
 const SHIPPING_RATES: ShippingRates = {
   "mondial-relay": {
     "fr": {
-      freeShippingThreshold: 4000, // 40€ en centimes
+      freeShippingThreshold: 5000, // 50€ en centimes
       brackets: [
         { minWeight: 0, maxWeight: 2, price: 599 },
         { minWeight: 2, maxWeight: 5, price: 799 },
