@@ -37,6 +37,7 @@ interface OrderNotificationData {
     city: string
     country?: string
   }
+  handDeliveryZone?: string
   orderNotes?: string
   orderUrl?: string
 }
@@ -73,13 +74,23 @@ function buildSlackMessage(data: OrderNotificationData) {
     shippingAddress,
     shippingMethod,
     relayPoint,
+    handDeliveryZone,
     orderNotes,
     orderUrl,
   } = data
 
+  const handDelivery = shippingMethod ? isHandDelivery(shippingMethod.name) : false
+
+  // Détecter si remise en main propre
+  const isHandDelivery = (methodName: string): boolean => {
+    const name = methodName.toLowerCase()
+    return name.includes('remise en main propre') || name.includes('main propre')
+  }
+
   // Détecter l'icône du transporteur
   const getShippingIcon = (methodName: string): string => {
     const name = methodName.toLowerCase()
+    if (isHandDelivery(name)) return '🤝'
     if (name.includes('mondial') || name.includes('relay')) return '📮'
     if (name.includes('chronopost')) return '⚡'
     if (name.includes('colissimo')) return '📦'
@@ -155,6 +166,15 @@ function buildSlackMessage(data: OrderNotificationData) {
           },
         },
       ] : []),
+      ...(handDelivery && handDeliveryZone ? [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `*🤝 Remise en main propre :*\nSecteur choisi par le client : *${handDeliveryZone}*\n_Les instructions de retrait seront envoyées par mail._`,
+          },
+        },
+      ] : []),
       {
         type: 'divider',
       },
@@ -207,7 +227,16 @@ function buildSlackMessage(data: OrderNotificationData) {
             url: `https://medusabackend-production-e0e9.up.railway.app/app/orders/${orderId}`,
             style: 'primary',
           },
-          {
+          handDelivery ? {
+            type: 'button',
+            text: {
+              type: 'plain_text',
+              text: '🤝 Confirmer la remise',
+              emoji: true,
+            },
+            url: `https://gomgombonbons.com/fr/ship-order/${orderId}`,
+            style: 'primary',
+          } : {
             type: 'button',
             text: {
               type: 'plain_text',
@@ -217,7 +246,7 @@ function buildSlackMessage(data: OrderNotificationData) {
             url: `https://gomgombonbons.com/fr/ship-order/${orderId}`,
             style: 'primary',
           },
-          ...(orderUrl ? [
+          ...(!handDelivery && orderUrl ? [
             {
               type: 'button',
               text: {
@@ -240,6 +269,76 @@ function buildSlackMessage(data: OrderNotificationData) {
         ],
       },
     ],
+  }
+}
+
+/**
+ * Envoie une notification Slack "commande expédiée / remise confirmée"
+ */
+export async function sendShippedNotificationToSlack(params: {
+  orderId: string
+  displayId: string
+  customerEmail: string
+  customerName?: string
+  isHandDelivery: boolean
+  handDeliveryZone?: string
+  trackingNumber?: string
+  carrier?: string
+  trackingUrl?: string
+}): Promise<void> {
+  const webhookUrl = process.env.SLACK_WEBHOOK_URL
+  if (!webhookUrl) return
+
+  const { orderId, displayId, customerEmail, customerName, isHandDelivery, handDeliveryZone, trackingNumber, carrier, trackingUrl } = params
+
+  const blocks = isHandDelivery ? [
+    {
+      type: 'header',
+      text: { type: 'plain_text', text: `✅ Remise confirmée — Commande #${displayId}`, emoji: true },
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*Client :*\n${customerName || customerEmail}` },
+        { type: 'mrkdwn', text: `*Secteur :*\n${handDeliveryZone || 'Non précisé'}` },
+      ],
+    },
+    {
+      type: 'context',
+      elements: [{ type: 'mrkdwn', text: `🤝 Remise en main propre effectuée · ${customerEmail}` }],
+    },
+  ] : [
+    {
+      type: 'header',
+      text: { type: 'plain_text', text: `✅ Expédiée — Commande #${displayId}`, emoji: true },
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*Client :*\n${customerName || customerEmail}` },
+        { type: 'mrkdwn', text: `*Transporteur :*\n${carrier || 'N/A'}` },
+      ],
+    },
+    ...(trackingNumber ? [{
+      type: 'section',
+      text: { type: 'mrkdwn', text: `*Numéro de suivi :*\n\`${trackingNumber}\`${trackingUrl ? `\n<${trackingUrl}|Voir le suivi>` : ''}` },
+    }] : []),
+    {
+      type: 'context',
+      elements: [{ type: 'mrkdwn', text: `📦 Colis envoyé · ${customerEmail}` }],
+    },
+  ]
+
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blocks }),
+    })
+    logger.info(`✅ [SLACK] Notification expédition envoyée pour commande #${displayId}`)
+  } catch (error) {
+    const err = error as Error | undefined
+    logger.error(`❌ [SLACK] Erreur notification expédition: ${err?.message || "unknown"}`)
   }
 }
 

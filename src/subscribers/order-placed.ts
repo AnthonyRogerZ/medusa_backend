@@ -1,7 +1,7 @@
 import type { SubscriberArgs } from "@medusajs/framework"
 import { OrderWorkflowEvents } from "@medusajs/utils"
 import { sendResendEmail } from "../lib/email/resend"
-import { sendOrderNotificationToSlack } from "../lib/slack/notifications"
+import { sendOrderNotificationToSlack, sendShippedNotificationToSlack } from "../lib/slack/notifications"
 
 // ─── TYPES ─── (Inchangés)
 type Logger = {
@@ -58,7 +58,7 @@ type OrderRecord = {
   tax_total?: number
   cart_id?: string
   customer_id?: string
-  metadata?: { relay_point?: RelayPoint; order_notes?: string }
+  metadata?: { relay_point?: RelayPoint; order_notes?: string; hand_delivery_zone?: string }
   items?: OrderItem[]
   shipping_address?: ShippingAddress
   shipping_methods?: ShippingMethod[]
@@ -627,6 +627,7 @@ export default async function handleOrderEmails({ event, container }: Subscriber
             city: relayPoint.city,
             country: relayPoint.country,
           } : undefined,
+          handDeliveryZone: order.metadata?.hand_delivery_zone,
           orderNotes: order.metadata?.order_notes,
           orderUrl: `https://gomgombonbons.com/fr/print-label/${order.id}`,
         })
