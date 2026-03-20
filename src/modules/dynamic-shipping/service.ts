@@ -287,7 +287,8 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
           const itemTotal = (item as any).total || ((item as any).unit_price || 0) * Number(item.quantity || 0)
           return sum + itemTotal
         }, 0)
-        const cartSubtotal = cartSubtotalFromCart > 0 ? cartSubtotalFromCart : cartSubtotalFromItems
+        // Priorité items (unit_price * qty = sous-total avant promo) pour cohérence avec le frontend
+        const cartSubtotal = cartSubtotalFromItems > 0 ? cartSubtotalFromItems : cartSubtotalFromCart
         log(`💰 Subtotal: cart=${cartSubtotalFromCart}€, items=${cartSubtotalFromItems}€, utilisé=${cartSubtotal}€, seuil=${countryRates.freeShippingThreshold}€`)
         if (cartSubtotal >= countryRates.freeShippingThreshold) {
           finalPrice = 0
@@ -306,7 +307,16 @@ class DynamicShippingService extends AbstractFulfillmentProviderService {
 
     } catch (error) {
       const err = error as Error | undefined
-      logger.error("❌ Erreur dans calculatePrice:", err?.message || err)
+      const msg = err?.message || ""
+      const isExpectedError = msg.includes("trop élevé") || msg.includes("Pas de tarifs")
+
+      if (isExpectedError) {
+        // Re-throw : l'option sera indisponible côté frontend (pas de faux prix)
+        throw error
+      }
+
+      // Erreur inattendue → log + fallback conservateur
+      logger.error("❌ Erreur inattendue dans calculatePrice:", msg || err)
       return {
         calculated_amount: 9.99,
         is_calculated_price_tax_inclusive: false,
