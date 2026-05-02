@@ -1,4 +1,5 @@
 import type { SubscriberArgs } from "@medusajs/framework"
+import { updateProductsWorkflow } from "@medusajs/medusa/core-flows"
 import { ProductWorkflowEvents } from "@medusajs/utils"
 
 export const DEFAULT_SHIPPING_PROFILE_ID =
@@ -16,12 +17,10 @@ type RemoteQuery = (query: {
   variables: { id: string }
 }) => Promise<ProductRecord | ProductRecord[] | null>
 
-type ProductModuleService = {
-  updateProducts: (
-    id: string,
-    data: { shipping_profile_id: string }
-  ) => Promise<unknown>
-}
+type UpdateProductShippingProfile = (
+  id: string,
+  shippingProfileId: string
+) => Promise<unknown>
 
 type ProductRecord = {
   id: string
@@ -57,12 +56,12 @@ const normalizeProductResult = (
 export const applyDefaultShippingProfile = async ({
   productId,
   remoteQuery,
-  productModuleService,
+  updateProductShippingProfile,
   logger,
 }: {
   productId: string
   remoteQuery: RemoteQuery
-  productModuleService: ProductModuleService
+  updateProductShippingProfile: UpdateProductShippingProfile
   logger: Logger
 }) => {
   const product = normalizeProductResult(
@@ -85,9 +84,7 @@ export const applyDefaultShippingProfile = async ({
     return
   }
 
-  await productModuleService.updateProducts(product.id, {
-    shipping_profile_id: DEFAULT_SHIPPING_PROFILE_ID,
-  })
+  await updateProductShippingProfile(product.id, DEFAULT_SHIPPING_PROFILE_ID)
 
   logger.info(
     `[DEFAULT-SHIPPING] Assigned Default Shipping Profile to ${product.id} (${product.title || "Untitled"})`
@@ -104,7 +101,17 @@ export default async function handleDefaultShippingProfile({
 }: SubscriberArgs<ProductEventPayload>) {
   const logger = container.resolve("logger") as Logger
   const remoteQuery = container.resolve("remoteQuery") as RemoteQuery
-  const productModuleService = container.resolve("product") as ProductModuleService
+  const updateProductShippingProfile: UpdateProductShippingProfile = async (
+    id,
+    shippingProfileId
+  ) => {
+    await updateProductsWorkflow(container).run({
+      input: {
+        selector: { id },
+        update: { shipping_profile_id: shippingProfileId },
+      },
+    })
+  }
 
   const productIds = normalizeProductIds(event.data)
 
@@ -118,7 +125,7 @@ export default async function handleDefaultShippingProfile({
       await applyDefaultShippingProfile({
         productId,
         remoteQuery,
-        productModuleService,
+        updateProductShippingProfile,
         logger,
       })
     } catch (error) {

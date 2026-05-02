@@ -1,3 +1,7 @@
+jest.mock("@medusajs/medusa/core-flows", () => ({
+  updateProductsWorkflow: jest.fn(),
+}))
+
 jest.mock("@medusajs/utils", () => ({
   ProductWorkflowEvents: {
     CREATED: "product.created",
@@ -21,18 +25,19 @@ describe("applyDefaultShippingProfile", () => {
       title: "Produit sans livraison",
       shipping_profile: null,
     })
-    const updateProducts = jest.fn().mockResolvedValue({ id: "prod_missing" })
+    const updateProductShippingProfile = jest.fn().mockResolvedValue({ id: "prod_missing" })
 
     await applyDefaultShippingProfile({
       productId: "prod_missing",
       remoteQuery,
-      productModuleService: { updateProducts },
+      updateProductShippingProfile,
       logger,
     })
 
-    expect(updateProducts).toHaveBeenCalledWith("prod_missing", {
-      shipping_profile_id: DEFAULT_SHIPPING_PROFILE_ID,
-    })
+    expect(updateProductShippingProfile).toHaveBeenCalledWith(
+      "prod_missing",
+      DEFAULT_SHIPPING_PROFILE_ID
+    )
     expect(logger.info).toHaveBeenCalledWith(
       expect.stringContaining("Assigned Default Shipping Profile")
     )
@@ -45,15 +50,15 @@ describe("applyDefaultShippingProfile", () => {
       title: "Produit OK",
       shipping_profile: { id: DEFAULT_SHIPPING_PROFILE_ID },
     })
-    const updateProducts = jest.fn()
+    const updateProductShippingProfile = jest.fn()
 
     await applyDefaultShippingProfile({
       productId: "prod_ok",
       remoteQuery,
-      productModuleService: { updateProducts },
+      updateProductShippingProfile,
       logger,
     })
 
-    expect(updateProducts).not.toHaveBeenCalled()
+    expect(updateProductShippingProfile).not.toHaveBeenCalled()
   })
 })
