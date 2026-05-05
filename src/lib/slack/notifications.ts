@@ -1,6 +1,7 @@
 /**
  * Service de notifications Slack pour les commandes
  */
+import { createFulfillmentLinkToken } from "../fulfillment-link-token"
 
 interface OrderNotificationData {
   orderId: string
@@ -78,6 +79,12 @@ function buildSlackMessage(data: OrderNotificationData) {
     orderNotes,
     orderUrl,
   } = data
+
+  const fulfillmentSecret = process.env.FULFILLMENT_SECRET_TOKEN
+  const fulfillmentToken = fulfillmentSecret
+    ? createFulfillmentLinkToken(orderId, fulfillmentSecret)
+    : null
+  const fulfillmentUrl = `https://gomgombonbons.com/fr/ship-order/${orderId}${fulfillmentToken ? `?token=${encodeURIComponent(fulfillmentToken)}` : ''}`
 
   // Détecter si remise en main propre
   const checkHandDelivery = (methodName: string): boolean => {
@@ -234,7 +241,7 @@ function buildSlackMessage(data: OrderNotificationData) {
               text: '🤝 Confirmer la remise',
               emoji: true,
             },
-            url: `https://gomgombonbons.com/fr/ship-order/${orderId}`,
+            url: fulfillmentUrl,
             style: 'primary',
           } : {
             type: 'button',
@@ -243,7 +250,7 @@ function buildSlackMessage(data: OrderNotificationData) {
               text: '📦 Expédier',
               emoji: true,
             },
-            url: `https://gomgombonbons.com/fr/ship-order/${orderId}`,
+            url: fulfillmentUrl,
             style: 'primary',
           },
           ...(!handDelivery && orderUrl ? [
